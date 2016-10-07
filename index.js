@@ -1,7 +1,7 @@
 const Eris = require('eris');
 const config = require('./config.js');
 
-var redis = require('node-redis'),
+var redis = require('redis'),
     client = redis.createClient(null, null);
 
 var Trello = require("node-trello");
