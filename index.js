@@ -7,7 +7,7 @@ var redis = require('redis'),
 var Trello = require("node-trello");
 var t = new Trello(config.trelloKey, config.trelloToken);
 
-var bot = new Eris(config.botToken, {
+var bot = new Eris(config.token, {
   maxShards: 2
 });
 
@@ -19,7 +19,6 @@ bot.on("error", err => {
 bot.on("ready", () => {
     console.log('Ready!');
 });
-
 var canarySKey;
 var iOSSKey;
 var androidSKey;
@@ -38,13 +37,13 @@ bot.on('messageCreate', (msg) => {
 
     if(dev > -1 || hunter > -1 || admin > -1){
       if(msg.channel.id === config.ios){
-        sendToRedis("i", messageSplit.join(' '), msg.channel.id, user);
+        sendToRedis("i", messageSplit.join(' '), msg.channel.id, user, msg.author.id);
 
       }else if(msg.channel.id === config.android){
-        sendToRedis("a", messageSplit.join(' '), msg.channel.id, user);
+        sendToRedis("a", messageSplit.join(' '), msg.channel.id, user, msg.author.id);
 
       }else if(msg.channel.id === config.canary){
-        sendToRedis("c", messageSplit.join(' '), msg.channel.id, user);
+        sendToRedis("c", messageSplit.join(' '), msg.channel.id, user, msg.author.id);
 
       }
     }
@@ -107,7 +106,7 @@ bot.on('messageCreate', (msg) => {
   }
 });
 
-function sendToRedis(system, bugReport, channelID, user){
+function sendToRedis(system, bugReport, channelID, user, userID){
   var key = system + Math.floor((Math.random() * 8999) + 1000);
 
   client.hexists(key, "os", function(err, reply){
@@ -136,7 +135,7 @@ function sendToRedis(system, bugReport, channelID, user){
           iOSSKey = undefined;
         }
       }
-      bot.createMessage(channelID, "Type `!header <key> <name of bug>` to finish the bug report. Your key is: `" + key + "`");
+      bot.createMessage(channelID, "<@" + userID +"> Type `!header <key> <name of bug>` to finish the bug report. Your key is: `" + key + "`");
     }
   });
 }
