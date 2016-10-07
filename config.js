@@ -1,5 +1,5 @@
 var config = {
-  token : '',
+  botToken : '',
   trelloKey: '',
   trelloToken: '',
 
