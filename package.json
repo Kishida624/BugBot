@@ -1,0 +1,19 @@
+{
+  "name": "bugtracker",
+  "version": "1.0.0",
+  "description": "Link between Discord and Trello",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamEm/Discord-trello.git"
+  },
+  "author": "Logiz",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamEm/Discord-trello/issues"
+  },
+  "homepage": "https://github.com/SamEm/Discord-trello#readme"
+}
