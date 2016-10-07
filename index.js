@@ -166,6 +166,7 @@ function sendToTrello(listID, header, report, channelID, key){
     canarySKey = undefined;
     iOSSKey = undefined;
     androidSKey = undefined;
+    client.del(key);
   };
   var newCard = {
     name: header,
