@@ -19,6 +19,7 @@ bot.on("error", err => {
 bot.on("ready", () => {
     console.log('Ready!');
 });
+
 var canarySKey;
 var iOSSKey;
 var androidSKey;
