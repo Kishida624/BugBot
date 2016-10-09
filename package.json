@@ -14,8 +14,7 @@
   "license": "ISC",
    "dependencies": {
     "abalabahaha/eris": "^0.3.0",
-    "node-trello": "^1.1.2",
-    "redis": "^2.6.2"
+    "node-trello": "^1.1.2"
   },
   "bugs": {
     "url": "https://github.com/SamEm/Discord-trello/issues"
