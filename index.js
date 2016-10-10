@@ -34,22 +34,28 @@ bot.on('messageCreate', (msg) => {
         bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please use the proper format. `!submit <title> | <report>`");
       }else if(msg.content.match(/\|/g).length < 2){
         var str = messageSplit.join(' ');
-
+        var attachment;
         const pipe = str.indexOf("|");
         const header = str.substr(0, pipe).trim();
         const report = str.substr(pipe+1).trim();
 
+        if(!!msg.attachments[0]){
+          attachment = "\n" + msg.attachments[0].url;
+        }else{
+          attachment = "";
+        }
+
         if(msg.channel.id === config.ios){
           var listID = config.iosTrello;
-          sendToTrello(listID, header, user + "\n" + report, msg.channel.id);
+          sendToTrello(listID, header, user + "\n" + report + attachment, msg.channel.id);
 
         }else if(msg.channel.id === config.android){
           var listID = config.androidTrello;
-          sendToTrello(listID, header, user + "\n" + report, msg.channel.id);
+          sendToTrello(listID, header, user + "\n" + report + attachment, msg.channel.id);
 
         }else if(msg.channel.id === config.canary){
           var listID = config.canaryTrello;
-          sendToTrello(listID, header, user + "\n" + report, msg.channel.id);
+          sendToTrello(listID, header, user + "\n" + report + attachment, msg.channel.id);
 
         }
       }else{
@@ -60,8 +66,8 @@ bot.on('messageCreate', (msg) => {
 });
 
 function sendToTrello(listID, header, report, channelID){
-  var creationSuccess = function(data) {
-    bot.createMessage(channelID, "Report added to Trello");
+  var creationSuccess = function(err, data) {
+    bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
   };
   var newCard = {
     name: header,
