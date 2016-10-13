@@ -21,6 +21,53 @@ bot.on('messageCreate', (msg) => {
   var messageSplit = msg.content.split(' ');
   var command = messageSplit.shift();
 
+  switch (command.toLowerCase()) {
+    case "!android":
+      if(msg.channel.id === config.android){
+        var android = config.androidAlpha;
+        var roles = msg.member.roles;
+        var index = roles.indexOf(android);
+        if(index === -1){
+          roles.push(android);
+          bot.editGuildMember(msg.guild.id, msg.author.id, {
+            roles: roles
+          }).then(() => {
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `testandroid`.  Use the same command again to remove this role from yourself.");
+          });
+        }else{
+          roles.splice(index, 1);
+          bot.editGuildMember(msg.guild.id, msg.author.id, {
+            roles: roles
+          }).then(() => {
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `testandroid` role. Use the same command again to add this role to yourself.");
+          });
+        }
+      }
+      break;
+    case "!ios":
+      if(msg.channel.id === config.ios){
+        var ios = config.iosTestflight;
+        var roles = msg.member.roles;
+        var index = roles.indexOf(ios);
+        if(index === -1){
+          roles.push(ios);
+          bot.editGuildMember(msg.guild.id, msg.author.id, {
+            roles: roles
+          }).then(() => {
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `testios`.  Use the same command again to remove this role from yourself.");
+          });
+        }else{
+          roles.splice(index, 1);
+          bot.editGuildMember(msg.guild.id, msg.author.id, {
+            roles: roles
+          }).then(() => {
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `testios` role. Use the same command again to add this role to yourself.");
+          });
+        }
+      }
+      break;
+  }
+
   if(command.toLowerCase() === "!submit"){
 
     var dev = msg.member.roles.indexOf(config.dev);
