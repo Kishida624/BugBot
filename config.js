@@ -10,6 +10,8 @@ var config = {
   dev: '197042389569765376',
   hunter: '197042209038663680',
   admin: '197042322939052032',
+  androidAlpha: '234838349800538112',
+  iosTestflight: '234838392464998402',
 
   iosTrello: '57f3de370c13c3bc6cf60df7',
   androidTrello: '57f2a30d861fa9b5816c9717',
