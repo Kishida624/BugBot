@@ -1,4 +1,4 @@
-const Eris = require('eris');
+iconst Eris = require('eris');
 const config = require('./config.js');
 
 var Trello = require("node-trello");
@@ -32,14 +32,14 @@ bot.on('messageCreate', (msg) => {
           bot.editGuildMember(msg.guild.id, msg.author.id, {
             roles: roles
           }).then(() => {
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `testandroid`.  Use the same command again to remove this role from yourself.");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `Android Alpha`.  Use the same command again to remove this role from yourself.");
           });
         }else{
           roles.splice(index, 1);
           bot.editGuildMember(msg.guild.id, msg.author.id, {
             roles: roles
           }).then(() => {
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `testandroid` role. Use the same command again to add this role to yourself.");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `Android Alpha` role. Use the same command again to add this role to yourself.");
           });
         }
       }
@@ -54,14 +54,14 @@ bot.on('messageCreate', (msg) => {
           bot.editGuildMember(msg.guild.id, msg.author.id, {
             roles: roles
           }).then(() => {
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `testios`.  Use the same command again to remove this role from yourself.");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `iOSTestflight`.  Use the same command again to remove this role from yourself.");
           });
         }else{
           roles.splice(index, 1);
           bot.editGuildMember(msg.guild.id, msg.author.id, {
             roles: roles
           }).then(() => {
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `testios` role. Use the same command again to add this role to yourself.");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `iOSTestflight` role. Use the same command again to add this role to yourself.");
           });
         }
       }
