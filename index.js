@@ -1,4 +1,4 @@
-iconst Eris = require('eris');
+const Eris = require('eris');
 const config = require('./config.js');
 
 var Trello = require("node-trello");
