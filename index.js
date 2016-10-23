@@ -391,7 +391,7 @@ function repro(status, user, clientInfo, channelID, trelloURL, userID){
     if(!!error){
       bot.createMessage(channelID, "Something went wrong, please try again");
     }else{
-      bot.createMessage(channelID, "<@" + userID + ">, your comment has been added.");
+      bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.");
     }
   }
   var reproInfo = {
