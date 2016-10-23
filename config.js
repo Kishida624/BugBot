@@ -13,8 +13,8 @@ var config = {
   androidAlpha: '234838349800538112',
   iosTestflight: '234838392464998402',
 
-  iosTrello: '57f3de370c13c3bc6cf60df7',
-  androidTrello: '57f2a30d861fa9b5816c9717',
-  canaryTrello: '5771677fda45a436c5b8d255'
+  iosCard: '57f3de370c13c3bc6cf60df7',
+  androidCard: '57f2a30d861fa9b5816c9717',
+  canaryCard: '5771677fda45a436c5b8d255'
 }
 module.exports = config;
