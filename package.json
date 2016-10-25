@@ -13,7 +13,7 @@
   "author": "Logiz",
   "license": "ISC",
    "dependencies": {
-    "abalabahaha/eris": "^0.3.0",
+    "eris": "^0.4.0",
     "node-trello": "^1.1.2"
   },
   "bugs": {
