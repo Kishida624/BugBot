@@ -348,8 +348,6 @@ bot.on('messageCreate', (msg) => {
 
                 const reportStringSubmit = "Reported by " + user + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
 
-                bot.createMessage(msg.channel.id, "Header: " + header + "\n\n" + reportStringSubmit);
-
                 if(!!msg.attachments[0]){
                   attachment = msg.attachments[0].url;
                 }else{
