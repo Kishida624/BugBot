@@ -27,7 +27,6 @@ bot.on('messageCreate', (msg) => {
 
     switch (command.toLowerCase()) {
       case "!android":
-        if(msg.channel.id === config.android){
           var android = config.androidAlpha;
           var roles = msg.member.roles;
           var index = roles.indexOf(android);
@@ -46,10 +45,8 @@ bot.on('messageCreate', (msg) => {
               bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `Android Alpha` role. Use the same command again to add this role to yourself.");
             });
           }
-        }
         break;
       case "!ios":
-        if(msg.channel.id === config.ios){
           var ios = config.iosTestflight;
           var roles = msg.member.roles;
           var index = roles.indexOf(ios);
@@ -68,7 +65,6 @@ bot.on('messageCreate', (msg) => {
               bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `iOSTestflight` role. Use the same command again to add this role to yourself.");
             });
           }
-        }
         break;
     }
 
