@@ -13,7 +13,7 @@ var config = {
   androidAlpha: '234838349800538112',      //Android Alpha role
   iosTestflight: '234838392464998402',     //iOSTestFlight role
 
-  iosCard: '57f3de370c13c3bc6cf60df7',     //trello iosCard
+  iosCard: '57fd4af58042f56c271d46b3',     //trello iosCard
   androidCard: '57f2a30d861fa9b5816c9717', //trello androidCard
   canaryCard: '5771677fda45a436c5b8d255'   //trello canaryCard
 }
