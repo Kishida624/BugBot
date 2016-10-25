@@ -4,7 +4,7 @@ const config = require('./config.js');
 var Trello = require("node-trello");
 var t = new Trello(config.trelloKey, config.trelloToken);
 
-var bot = new Eris(config.token, {
+var bot = new Eris(config.botToken, {
   maxShards: 2
 });
 
