@@ -17,17 +17,34 @@ bot.on("ready", () => {
     console.log('Ready!');
 });
 
+function delay(delayMS) {
+  return function(arg){
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(arg), delayMS);
+    });
+  }
+}
+
+bot.on('guildMemberUpdate', (guild, member, oldMember) => {
+  if(oldMember.roles.indexOf(config.hunterRole) <= -1 && member.roles.indexOf(config.hunterRole) > -1){
+    bot.createMessage(config.bugHunterChannel, 'Welcome <@' + member.user.id + '> to the Bug Hunters™!');
+  }
+});
+
+
+var user;
+
 bot.on('messageCreate', (msg) => {
   var messageSplit = msg.content.split(' ');
   var command = messageSplit.shift();
 
   var channelID = msg.channel.id;
-  var user = msg.author.username + "#" + msg.author.discriminator;
+  user = msg.author.username + "#" + msg.author.discriminator;
   var userID = msg.author.id;
 
     switch (command.toLowerCase()) {
       case "!android":
-          var android = config.androidAlpha;
+          var android = config.androidAlphaRole;
           var roles = msg.member.roles;
           var index = roles.indexOf(android);
           if(index === -1){
@@ -35,19 +52,27 @@ bot.on('messageCreate', (msg) => {
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `Android Alpha`.  Use the same command again to remove this role from yourself.");
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `Android Alpha`.  Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(msg.channel.id, msg.id);
+              });
+              bot.createMessage(config.modLog, "Gave role `Android Alpha` to " + user);
             });
           }else{
             roles.splice(index, 1);
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `Android Alpha` role. Use the same command again to add this role to yourself.");
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `Android Alpha` role. Use the same command again to add this role to yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(msg.channel.id, msg.id);
+              });
+              bot.createMessage(config.modLog, "Removed role `Android Alpha` from " + user);
             });
           }
         break;
       case "!ios":
-          var ios = config.iosTestflight;
+          var ios = config.iosTestflightRole;
           var roles = msg.member.roles;
           var index = roles.indexOf(ios);
           if(index === -1){
@@ -55,100 +80,121 @@ bot.on('messageCreate', (msg) => {
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `iOSTestflight`.  Use the same command again to remove this role from yourself.");
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `iOSTestflight`.  Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(msg.channel.id, msg.id);
+              });
+              bot.createMessage(config.modLog, "Gave role `iOSTestflight` to " + user);
             });
           }else{
             roles.splice(index, 1);
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `iOSTestflight` role. Use the same command again to add this role to yourself.");
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been removed from the `iOSTestflight` role. Use the same command again to add this role to yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(msg.channel.id, msg.id);
+              });
+              bot.createMessage(config.modLog, "Removed role `iOSTestflight` from " + user);
             });
           }
         break;
     }
 
-  if(msg.channel.id === config.android || msg.channel.id === config.canary || msg.channel.id === config.ios){
+  if(msg.channel.id === config.androidChannel || msg.channel.id === config.canaryChannel || msg.channel.id === config.iosChannel){
 
     if(command.toLowerCase() === "!canrepro"){
+
       var joinedMessage = messageSplit.join(' ');
-      var splitter = joinedMessage.indexOf("|");
-      var url = joinedMessage.substr(0, splitter).trim();
-      var clientInfo = joinedMessage.substr(splitter + 1).trim();
-      var trelloURL = url.match(/[^/]+(?=$|$)/gi);
 
-      if(splitter > -1 && !!clientInfo){
-        t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-          if(!!urlData.id){
-            var status = "Can reproduce.\n";
-            repro(status, user, clientInfo, channelID, trelloURL, userID);
-          }else{
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, incorrect url");
-          }
-        });
+      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
+      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
 
-      }else{
-        bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please provide a valid URL and a client version");
-      }
+      t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
+        if(!!urlData.id){
+          var status = "Can reproduce.";
+            repro(status, clientInfo, channelID, trelloURL, userID);
+        }else{
+          bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+            bot.deleteMessage(msg.channel.id, msg.id);
+          });
+        }
+      });
     }
+
     if(command.toLowerCase() === "!cannotrepro"){
       var joinedMessage = messageSplit.join(' ');
-      var splitter = joinedMessage.indexOf("|");
-      var url = joinedMessage.substr(0, splitter).trim();
-      var clientInfo = joinedMessage.substr(splitter + 1).trim();
-      var trelloURL = url.match(/[^/]+(?=$|$)/gi);
+      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
+      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
 
-      if(splitter > -1 && !!clientInfo){
+      if(!!trelloURL && (clientInfo !== trelloURL)){
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
-            var status = "Can't reproduce.\n";
-            repro(status, user, clientInfo, channelID, trelloURL, userID);
+            var status = "Can't reproduce.";
+            repro(status, clientInfo, channelID, trelloURL, userID);
           }else{
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, incorrect url");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+              bot.deleteMessage(msg.channel.id, msg.id);
+            });
           }
         });
       }else{
-        bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please provide a valid URL and a client version");
+        bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
+          bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+          bot.deleteMessage(msg.channel.id, msg.id);
+        });
       }
     }
 
     if(command.toLowerCase() === "!attach"){
-      var dev = msg.member.roles.indexOf(config.dev);
-      var hunter = msg.member.roles.indexOf(config.hunter);
-      var admin = msg.member.roles.indexOf(config.admin);
+      var dev = msg.member.roles.indexOf(config.devRole);
+      var hunter = msg.member.roles.indexOf(config.hunterRole);
+      var admin = msg.member.roles.indexOf(config.adminRole);
 
       if(dev > -1 || hunter > -1 || admin > -1){
         var attachment;
         var joinedMessage = messageSplit.join(' ');
 
         var splitter = joinedMessage.indexOf("|");
-        var url = joinedMessage.substr(0, splitter).trim();
-        var attachmentUrl = joinedMessage.substr(splitter + 1).trim();
-        var trelloURL = url.match(/[^/]+(?=$|$)/gi);
 
+        var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
+        var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
 
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
             if(!!msg.attachments[0]){
               attachment = msg.attachments[0].url;
-              addAttachment(channelID, attachment, user, trelloURL, userID);
+              addAttachment(channelID, attachment, trelloURL, userID);
             }else if(!!attachmentUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig)){
               attachment = attachmentUrl;
-              addAttachment(channelID, attachment, user, trelloURL, userID);
+              addAttachment(channelID, attachment, trelloURL, userID);
             }else{
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please include a valid image");
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please include a valid image").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(msg.channel.id, msg.id);
+              });
             }
 
           }else{
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please include a valid trello link");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please include a valid trello link").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+              bot.deleteMessage(msg.channel.id, msg.id);
+            });
           }
+        });
+      }else{
+        bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.").then(delay(config.delayInMS)).then((msg_id) => {
+          bot.deleteMessage(msg_id.channel.id, msg_id.id);
+          bot.deleteMessage(msg.channel.id, msg.id);
         });
       }
     } // Add attachments to reports // Attach files to existing reports
     if(command.toLowerCase() === "!edit"){
-        var dev = msg.member.roles.indexOf(config.dev);
-        var hunter = msg.member.roles.indexOf(config.hunter);
-        var admin = msg.member.roles.indexOf(config.admin);
+        var dev = msg.member.roles.indexOf(config.devRole);
+        var hunter = msg.member.roles.indexOf(config.hunterRole);
+        var admin = msg.member.roles.indexOf(config.adminRole);
 
         if(dev > -1 || hunter > -1 || admin > -1){
           var attachment;
@@ -156,11 +202,8 @@ bot.on('messageCreate', (msg) => {
           var joinedMessage = messageSplit.join(' ');
           var splitter = msg.content.match(/\|/g);
 
-          const splitURLReport = joinedMessage.indexOf("|");
-          var url = joinedMessage.substr(0, splitURLReport).trim();
-          var trelloURL = url.match(/[^/]+(?=$|$)/gi);
-
-          var report = joinedMessage.substr(splitURLReport + 1).trim();
+          var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
+          var report = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
 
           var lowerCaseReport = report.toLowerCase();
           var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
@@ -241,26 +284,36 @@ bot.on('messageCreate', (msg) => {
                     attachment = undefined;
                   }
 
-                  updateTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + msg.author.id + '>', user);
+                  updateTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + msg.author.id + '>');
                 }else{
-                  bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please format the list correctly ` - item one - item two - item three (etc)`"); // need a better response
+                  bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                    bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                  });
                 }
 
               }else{
-                bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> I can’t find that issue in Trello. Please double check the URL.");
+                bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> I can’t find that issue in Trello. Please double check the URL.").then(delay(config.delayInMS)).then((innerMsg) => {
+                  bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                });
               }
             });
           }else{
-            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please use the standard `!edit <URL> | <content>` format.");
+            bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, please use the standard `!edit <URL> | <content>` format.").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+            });
           }
+        }else{
+          bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.").then(delay(config.delayInMS)).then((msg_id) => {
+            bot.deleteMessage(msg_id.channel.id, msg_id.id);
+          });
         }
 
     } // Edit an existing reports
 
     if(command.toLowerCase() === "!submit"){ // Submit a report
-      var dev = msg.member.roles.indexOf(config.dev);
-      var hunter = msg.member.roles.indexOf(config.hunter);
-      var admin = msg.member.roles.indexOf(config.admin);
+      var dev = msg.member.roles.indexOf(config.devRole);
+      var hunter = msg.member.roles.indexOf(config.hunterRole);
+      var admin = msg.member.roles.indexOf(config.adminRole);
 
       if(dev > -1 || hunter > -1 || admin > -1){
         var splitter = msg.content.match(/\|/g);
@@ -274,12 +327,6 @@ bot.on('messageCreate', (msg) => {
         var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
         if(!!splitter && splitter.length < 2 && !!matchFormat && matchFormat.length === 3 && matchFormat.indexOf('steps to reproduce') > -1 && matchFormat.indexOf('expected result')  > -1 && matchFormat.indexOf('actual result') > -1){
-
-          t.get("/1/search/", { query: header}, function(errorQuery, searchedQuery) {
-
-            if(!!searchedQuery.cards && searchedQuery.cards.length > 0){
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, It looks like that report already exists. <" + searchedQuery.cards[0].shortUrl + ">");
-            }else{
 
               var attachment;
 
@@ -354,52 +401,70 @@ bot.on('messageCreate', (msg) => {
                   attachment = undefined;
                 }
 
-                if(msg.channel.id === config.ios){
+                if(msg.channel.id === config.iosChannel){
                   var listID = config.iosCard;
                   sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
 
-                }else if(msg.channel.id === config.android){
+                }else if(msg.channel.id === config.androidChannel){
                   var listID = config.androidCard;
                   sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
 
-                }else if(msg.channel.id === config.canary){
+                }else if(msg.channel.id === config.canaryChannel){
                   var listID = config.canaryCard;
                   sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
 
                 }
               }else{
-                bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please format the list correctly ` - item one - item two - item three (etc)`"); // need a better response
+                bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                  bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                });
               }
 
-            }
-          });
+
         }else{
-          bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you need to include `Steps to Reproduce:`, `Expected Results:` and `Actual Results:` in your report.");
+          bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you need to include `Steps to Reproduce:`, `Expected Results:` and `Actual Results:` in your report.").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+          });
         }
+      }else{
+        bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.").then(delay(config.delayInMS)).then((msg_id) => {
+          bot.deleteMessage(msg_id.channel.id, msg_id.id);
+        });
       }
     }
   }
 });
-function repro(status, user, clientInfo, channelID, trelloURL, userID){
-  var sentRepro = function(error, data){
+function repro(status, clientInfo, channelID, trelloURL, userID){
+  var sentRepro = function(error, info){
     if(!!error){
-      bot.createMessage(channelID, "Something went wrong, please try again");
+      bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
+        bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+      });
     }else{
-      bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.");
+      bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
+        bot.deleteMessage(msg_id.channel.id, msg_id.id);
+      });
+      bot.createMessage(config.modLog, user + ": " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
     }
   }
   var reproInfo = {
-    text: status + clientInfo + "\n\n" + user
+    text: status + "\n" + clientInfo + "\n\n" + user
   }
   t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
 }
-function addAttachment(channelID, attachment, user, cardID, userID){
+function addAttachment(channelID, attachment, cardID, userID){
 
   var attachmentAdded = function(attachmentAddedErr, dataAttachment){
     if(!!attachmentAddedErr){
-      bot.createMessage(channelID, "Something went wrong, please try again");
+      bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
+        bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+      });
     }else{
-      bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.");
+      console.log(dataAttachment);
+      bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.").then(delay(config.delayInMS)).then((msg_id) => {
+        bot.deleteMessage(msg_id.id);
+      });
+      bot.createMessage(config.modLog, user + " added an attachment to <" + dataAttachment.shortUrl + ">");
     }
   }
   var addAttachment = {
@@ -420,6 +485,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
+        bot.createMessage(config.modLog, user + " submitted this reported `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment
@@ -427,6 +493,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
+      bot.createMessage(config.modLog, user + " submitted this reported `" + header + "` <" + data.shortUrl + ">");
     }
   };
   var newCard = {
@@ -437,7 +504,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
   };
   t.post('/1/cards/', newCard, creationSuccess);
 }
-function updateTrelloCard(cardID, attachment, channelID, report, userID, userName){
+function updateTrelloCard(cardID, attachment, channelID, report, userID){
   var cardUpdated = function(error, data){
     if(!!attachment){
       var attachmentAdded = function(attachmentAddedErr, dataAttachment){
@@ -445,14 +512,16 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID, userNam
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
+        bot.createMessage(config.modLog, user + " edited this reported `" + data.name + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment,
-        name: userName
+        name: user
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
+      bot.createMessage(config.modLog, user + " edited this reported `"  + data.name + "` <" + data.shortUrl + ">");
     }
   }
   var updateCard = {
