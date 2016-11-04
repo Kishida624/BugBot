@@ -159,16 +159,16 @@ bot.on('messageCreate', (msg) => {
 
         var splitter = joinedMessage.indexOf("|");
 
-        var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \|([\s\S]*)/gi, "$2");
-        var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \|([\s\S]*)/gi, "$5");
+        var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$2");
+        var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$6");
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
             if(!!msg.attachments[0]){
               attachment = msg.attachments[0].url;
-              addAttachment(channelID, attachment, trelloURL, userID);
+              addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name);
             }else if(!!attachmentUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig)){
               attachment = attachmentUrl;
-              addAttachment(channelID, attachment, trelloURL, userID);
+              addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name);
             }else{
               bot.createMessage(msg.channel.id, "<@" + msg.author.id + "> Please include a valid image").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -451,7 +451,7 @@ function repro(status, clientInfo, channelID, trelloURL, userID){
   }
   t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
 }
-function addAttachment(channelID, attachment, cardID, userID){
+function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDateName){
 
   var attachmentAdded = function(attachmentAddedErr, dataAttachment){
     if(!!attachmentAddedErr){
@@ -462,7 +462,7 @@ function addAttachment(channelID, attachment, cardID, userID){
       bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.id);
       });
-      bot.createMessage(config.modLogChannel, user + " added an attachment to <" + dataAttachment.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, user + " added an attachment to `" + urlDateName + "` <https://trello.com/c/" + trelloURL + ">");
     }
   }
   var addAttachment = {
