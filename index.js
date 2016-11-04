@@ -159,9 +159,8 @@ bot.on('messageCreate', (msg) => {
 
         var splitter = joinedMessage.indexOf("|");
 
-        var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
-        var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
-
+        var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \|([\s\S]*)/gi, "$2");
+        var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \|([\s\S]*)/gi, "$5");
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
             if(!!msg.attachments[0]){
@@ -460,7 +459,6 @@ function addAttachment(channelID, attachment, cardID, userID){
         bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
       });
     }else{
-      console.log(dataAttachment);
       bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.id);
       });
