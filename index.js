@@ -56,7 +56,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLog, "Gave role `Android Alpha` to " + user);
+              bot.createMessage(config.modLogChannel, "Gave role `Android Alpha` to " + user);
             });
           }else{
             roles.splice(index, 1);
@@ -67,7 +67,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLog, "Removed role `Android Alpha` from " + user);
+              bot.createMessage(config.modLogChannel, "Removed role `Android Alpha` from " + user);
             });
           }
         break;
@@ -84,7 +84,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLog, "Gave role `iOSTestflight` to " + user);
+              bot.createMessage(config.modLogChannel, "Gave role `iOSTestflight` to " + user);
             });
           }else{
             roles.splice(index, 1);
@@ -95,7 +95,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLog, "Removed role `iOSTestflight` from " + user);
+              bot.createMessage(config.modLogChannel, "Removed role `iOSTestflight` from " + user);
             });
           }
         break;
@@ -444,7 +444,7 @@ function repro(status, clientInfo, channelID, trelloURL, userID){
       bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.channel.id, msg_id.id);
       });
-      bot.createMessage(config.modLog, user + ": " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      bot.createMessage(config.modLogChannel, user + ": " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
     }
   }
   var reproInfo = {
@@ -464,7 +464,7 @@ function addAttachment(channelID, attachment, cardID, userID){
       bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.id);
       });
-      bot.createMessage(config.modLog, user + " added an attachment to <" + dataAttachment.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, user + " added an attachment to <" + dataAttachment.shortUrl + ">");
     }
   }
   var addAttachment = {
@@ -485,7 +485,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
-        bot.createMessage(config.modLog, user + " submitted this reported `" + header + "` <" + data.shortUrl + ">");
+        bot.createMessage(config.modLogChannel, user + " submitted this report `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment
@@ -493,7 +493,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
-      bot.createMessage(config.modLog, user + " submitted this reported `" + header + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, user + " submitted this report `" + header + "` <" + data.shortUrl + ">");
     }
   };
   var newCard = {
@@ -512,7 +512,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID){
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
-        bot.createMessage(config.modLog, user + " edited this reported `" + data.name + "` <" + data.shortUrl + ">");
+        bot.createMessage(config.modLogChannel, user + " edited this report `" + data.name + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment,
@@ -521,7 +521,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID){
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
-      bot.createMessage(config.modLog, user + " edited this reported `"  + data.name + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, user + " edited this report `"  + data.name + "` <" + data.shortUrl + ">");
     }
   }
   var updateCard = {
