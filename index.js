@@ -52,11 +52,11 @@ bot.on('messageCreate', (msg) => {
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `Android Alpha`.  Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `Android Alpha`. Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Gave role `Android Alpha` to **" + user + "**");
+              bot.createMessage(config.modLogChannel, "Gave `Android Alpha` to **" + user + "**");
             });
           }else{
             roles.splice(index, 1);
@@ -67,7 +67,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Removed role `Android Alpha` from **" + user + "**");
+              bot.createMessage(config.modLogChannel, "Removed `Android Alpha` from **" + user + "**");
             });
           }
         break;
@@ -80,7 +80,7 @@ bot.on('messageCreate', (msg) => {
             bot.editGuildMember(msg.guild.id, msg.author.id, {
               roles: roles
             }).then(() => {
-              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `iOSTestflight`.  Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.createMessage(msg.channel.id, "<@" + msg.author.id + ">, you have been given the role of `iOSTestflight`. Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
