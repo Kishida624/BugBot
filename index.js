@@ -56,7 +56,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Gave role `Android Alpha` to " + user);
+              bot.createMessage(config.modLogChannel, "Gave role `Android Alpha` to **" + user + "**");
             });
           }else{
             roles.splice(index, 1);
@@ -67,7 +67,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Removed role `Android Alpha` from " + user);
+              bot.createMessage(config.modLogChannel, "Removed role `Android Alpha` from **" + user + "**");
             });
           }
         break;
@@ -84,7 +84,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Gave role `iOSTestflight` to " + user);
+              bot.createMessage(config.modLogChannel, "Gave `iOSTestflight` to **" + user + "**");
             });
           }else{
             roles.splice(index, 1);
@@ -95,7 +95,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(msg.channel.id, msg.id);
               });
-              bot.createMessage(config.modLogChannel, "Removed role `iOSTestflight` from " + user);
+              bot.createMessage(config.modLogChannel, "Removed `iOSTestflight` from **" + user + "**");
             });
           }
         break;
@@ -402,15 +402,15 @@ bot.on('messageCreate', (msg) => {
 
                 if(msg.channel.id === config.iosChannel){
                   var listID = config.iosCard;
-                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
+                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment, "iOS");
 
                 }else if(msg.channel.id === config.androidChannel){
                   var listID = config.androidCard;
-                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
+                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment, "Android");
 
                 }else if(msg.channel.id === config.canaryChannel){
                   var listID = config.canaryCard;
-                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment);
+                  sendToTrello(listID, header, reportStringSubmit, msg.channel.id, attachment, "Canary");
 
                 }
               }else{
@@ -460,9 +460,9 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
       });
     }else{
       bot.createMessage(channelID, "<@" + userID + ">, your attachment has been added.").then(delay(config.delayInMS)).then((msg_id) => {
-        bot.deleteMessage(msg_id.id);
+        bot.deleteMessage(msg_id.channel.id, msg_id.id);
       });
-      bot.createMessage(config.modLogChannel, user + " added an attachment to `" + urlDateName + "` <https://trello.com/c/" + trelloURL + ">");
+      bot.createMessage(config.modLogChannel, "**" + user + "** added an attachment to `" + urlDateName + "` <https://trello.com/c/" + trelloURL + ">");
     }
   }
   var addAttachment = {
@@ -472,7 +472,7 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
   t.post('/1/cards/' + cardID + '/attachments', addAttachment, attachmentAdded);
 
 }
-function sendToTrello(listID, header, report, channelID, attachment){
+function sendToTrello(listID, header, report, channelID, attachment, whereFrom){
   var creationSuccess = function(creationSuccessErr, data) {
     if(!!creationSuccessErr){
       console.log(creationSuccessErr);
@@ -483,7 +483,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
-        bot.createMessage(config.modLogChannel, user + " submitted this report `" + header + "` <" + data.shortUrl + ">");
+        bot.createMessage(config.modLogChannel, whereFrom + ": **" + user + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment
@@ -491,7 +491,7 @@ function sendToTrello(listID, header, report, channelID, attachment){
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
-      bot.createMessage(config.modLogChannel, user + " submitted this report `" + header + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, whereFrom + ": **" + user + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
     }
   };
   var newCard = {
@@ -510,7 +510,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID){
           console.log(attachmentAddedErr);
         }
         bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
-        bot.createMessage(config.modLogChannel, user + " edited this report `" + data.name + "` <" + data.shortUrl + ">");
+        bot.createMessage(config.modLogChannel, "**" + user + "** edited this report `" + data.name + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment,
@@ -519,7 +519,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID){
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
       bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.");
-      bot.createMessage(config.modLogChannel, user + " edited this report `"  + data.name + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, "**" + user + "** edited this report `"  + data.name + "` <" + data.shortUrl + ">");
     }
   }
   var updateCard = {
