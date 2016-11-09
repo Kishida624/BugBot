@@ -47,7 +47,7 @@ bot.on('messageCreate', (msg) => {
             roles: roles
           }).then(() => {
             bot.createMessage(channelID, "<@" + userID + ">, you have been given the role of `Android Alpha`. Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
             bot.createMessage(config.modLogChannel, "Gave `Android Alpha` to **" + userTag + "**");
@@ -58,7 +58,7 @@ bot.on('messageCreate', (msg) => {
             roles: roles
           }).then(() => {
             bot.createMessage(channelID, "<@" + userID + ">, you have been removed from the `Android Alpha` role. Use the same command again to add this role to yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
             bot.createMessage(config.modLogChannel, "Removed `Android Alpha` from **" + userTag + "**");
@@ -75,7 +75,7 @@ bot.on('messageCreate', (msg) => {
             roles: roles
           }).then(() => {
             bot.createMessage(channelID, "<@" + userID + ">, you have been given the role of `iOSTestflight`. Use the same command again to remove this role from yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
             bot.createMessage(config.modLogChannel, "Gave `iOSTestflight` to **" + userTag + "**");
@@ -86,7 +86,7 @@ bot.on('messageCreate', (msg) => {
             roles: roles
           }).then(() => {
             bot.createMessage(channelID, "<@" + userID + ">, you have been removed from the `iOSTestflight` role. Use the same command again to add this role to yourself.").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
             bot.createMessage(config.modLogChannel, "Removed `iOSTestflight` from **" + userTag + "**");
@@ -108,7 +108,7 @@ bot.on('messageCreate', (msg) => {
             repro(status, clientInfo, channelID, trelloURL, userID);
         }else{
           bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
-            bot.deleteMessage(innerchannelID, innerMsg.id);
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           });
         }
@@ -127,14 +127,14 @@ bot.on('messageCreate', (msg) => {
             repro(status, clientInfo, channelID, trelloURL, userID);
           }else{
             bot.createMessage(channelID, "<@" + userID + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
           }
         });
       }else{
         bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
-          bot.deleteMessage(innerchannelID, innerMsg.id);
+          bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           bot.deleteMessage(channelID, msg.id);
         });
       }
@@ -155,20 +155,20 @@ bot.on('messageCreate', (msg) => {
           if(!!urlData.id){
             if(!!msg.attachments[0]){
               attachment = msg.attachments[0].url;
-              addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name);
+              addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name, userTag);
             }else if(!!attachmentUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig)){
               attachment = attachmentUrl;
               addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name, userTag);
             }else{
               bot.createMessage(channelID, "<@" + userID + "> Please include a valid image").then(delay(config.delayInMS)).then((innerMsg) => {
-                bot.deleteMessage(innerchannelID, innerMsg.id);
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               });
             }
 
           }else{
             bot.createMessage(channelID, "<@" + userID + "> Please include a valid trello link").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
           }
@@ -271,19 +271,19 @@ bot.on('messageCreate', (msg) => {
                   updateTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + userID + '>', userTag);
                 }else{
                   bot.createMessage(channelID, "<@" + userID + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
-                    bot.deleteMessage(innerchannelID, innerMsg.id);
+                    bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   });
                 }
 
               }else{
                 bot.createMessage(channelID, "<@" + userID + "> I can’t find that issue in Trello. Please double check the URL.").then(delay(config.delayInMS)).then((innerMsg) => {
-                  bot.deleteMessage(innerchannelID, innerMsg.id);
+                  bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 });
               }
             });
           }else{
             bot.createMessage(channelID, "<@" + userID + ">, please use the standard `!edit <URL> | <content>` format.").then(delay(config.delayInMS)).then((innerMsg) => {
-              bot.deleteMessage(innerchannelID, innerMsg.id);
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             });
           }
         }else{
@@ -397,13 +397,13 @@ bot.on('messageCreate', (msg) => {
                 }
               }else{
                 bot.createMessage(channelID, "<@" + userID + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
-                  bot.deleteMessage(innerchannelID, innerMsg.id);
+                  bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 });
               }
 
         }else{
           bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce:`, `Expected Results:` and `Actual Results:` in your report.").then(delay(config.delayInMS)).then((innerMsg) => {
-            bot.deleteMessage(innerchannelID, innerMsg.id);
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           });
         }
       }else{
@@ -418,7 +418,7 @@ function repro(status, clientInfo, channelID, trelloURL, userID, userTag){
   var sentRepro = function(error, info){
     if(!!error){
       bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
-        bot.deleteMessage(innerchannelID, innerMsg.id);
+        bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
       });
     }else{
       bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
