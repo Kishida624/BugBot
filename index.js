@@ -105,7 +105,7 @@ bot.on('messageCreate', (msg) => {
       t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
         if(!!urlData.id){
           var status = "Can reproduce.";
-            repro(status, clientInfo, channelID, trelloURL, userID);
+            repro(status, clientInfo, channelID, trelloURL, userID, userTag);
         }else{
           bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -124,7 +124,7 @@ bot.on('messageCreate', (msg) => {
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
             var status = "Can't reproduce.";
-            repro(status, clientInfo, channelID, trelloURL, userID);
+            repro(status, clientInfo, channelID, trelloURL, userID, userTag);
           }else{
             bot.createMessage(channelID, "<@" + userID + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -434,7 +434,7 @@ function repro(status, clientInfo, channelID, trelloURL, userID, userTag){
     }
   }
   var reproInfo = {
-    text: status + "\n" + clientInfo + "\n\n" + user
+    text: status + "\n" + clientInfo + "\n\n" + userTag
   }
   t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
 }
@@ -454,7 +454,7 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
   }
   var addAttachment = {
     url: attachment,
-    name: user
+    name: userID
   }
   t.post('/1/cards/' + cardID + '/attachments', addAttachment, attachmentAdded);
 
@@ -505,7 +505,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID, userTag
       }
       var addAttachment = {
         url: attachment,
-        name: user
+        name: userID
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
