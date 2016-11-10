@@ -99,8 +99,8 @@ bot.on('messageCreate', (msg) => {
     if(command.toLowerCase() === "!canrepro"){
       var joinedMessage = messageSplit.join(' ');
 
-      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
-      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
+      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
+      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
 
       t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
         if(!!urlData.id){
@@ -117,8 +117,8 @@ bot.on('messageCreate', (msg) => {
 
     if(command.toLowerCase() === "!cannotrepro"){
       var joinedMessage = messageSplit.join(' ');
-      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$2");
-      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
+      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
+      var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
 
       if(!!trelloURL && (clientInfo !== trelloURL)){
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
@@ -326,6 +326,7 @@ bot.on('messageCreate', (msg) => {
                 var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                 var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
                 var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
+                var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
               }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
                 var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
                 var section5 = report.match(/(client version)([\s\S]*)/gi);
@@ -333,6 +334,7 @@ bot.on('messageCreate', (msg) => {
                 var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                 var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                 var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
+                var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
               }else if(!!systemClient && systemClient.length === 2){
 
                 var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
@@ -350,12 +352,14 @@ bot.on('messageCreate', (msg) => {
                   var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                 }
                 var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
+                var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
               }else{
                 var section4 = report.match(/(actual result)([\s\S]*)/gi);
 
                 var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
 
                 var combinedSections = section4Clean;
+                var repostCombinedSections = section4Clean;
               }
 
               var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
@@ -378,6 +382,8 @@ bot.on('messageCreate', (msg) => {
                 }
 
                 const reportStringSubmit = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
+                const repostReportString = "Reported by " + userTag + "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
+                var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
 
                 if(!!msg.attachments[0]){
                   attachment = msg.attachments[0].url;
@@ -387,13 +393,13 @@ bot.on('messageCreate', (msg) => {
 
                 if(channelID === config.iosChannel){
                   var listID = config.iosCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "iOS", userTag);
+                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "iOS", userTag, cleanRepostReport, msg.id);
                 }else if(channelID === config.androidChannel){
                   var listID = config.androidCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Android", userTag);
+                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Android", userTag, cleanRepostReport, msg.id);
                 }else if(channelID === config.canaryChannel){
                   var listID = config.canaryCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Canary", userTag);
+                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Canary", userTag, cleanRepostReport, msg.id);
                 }
               }else{
                 bot.createMessage(channelID, "<@" + userID + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -453,7 +459,7 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
   t.post('/1/cards/' + cardID + '/attachments', addAttachment, attachmentAdded);
 
 }
-function sendToTrello(listID, header, report, channelID, attachment, whereFrom, userTag){
+function sendToTrello(listID, header, report, channelID, attachment, whereFrom, userTag, repostReportString, msgID){
   var creationSuccess = function(creationSuccessErr, data) {
     if(!!creationSuccessErr){
       console.log(creationSuccessErr);
@@ -463,7 +469,9 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
         if(!!attachmentAddedErr){
           console.log(attachmentAddedErr);
         }
-        bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
+        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">").then(delay(config.delayInMS)).then(() => {
+          bot.deleteMessage(channelID, msgID);
+        });
         bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
@@ -471,7 +479,9 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
-      bot.createMessage(channelID, "Report added to Trello <" + data.shortUrl + ">");
+      bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">").then(delay(config.delayInMS)).then(() => {
+        bot.deleteMessage(channelID, msgID);
+      });
       bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
     }
   };
