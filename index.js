@@ -109,7 +109,7 @@ bot.on('messageCreate', (msg) => {
             var dataFinder = data.find(function(foundObj) {
               return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
             });
-            var editMsgCreate = dataFinder.content + "\n:white_check_mark: " + userTag;
+            var editMsgCreate = dataFinder.content + "\n✅ " + userTag;
             if(clientInfo === trelloURL){
               repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
             }else{
@@ -138,7 +138,7 @@ bot.on('messageCreate', (msg) => {
               var dataFinder = data.find(function(foundObj) {
                 return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
               });
-              var editMsgCreate = dataFinder.content + "\n:x: " + userTag;
+              var editMsgCreate = dataFinder.content + "\n❌ " + userTag;
               if(clientInfo === trelloURL){
                 repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
               }else{
@@ -218,9 +218,9 @@ bot.on('messageCreate', (msg) => {
           var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
           if(!!splitter && splitter.length < 2) {
-            if(matchFormat.indexOf('steps to reproduce') > -1) {
-              if(matchFormat.indexOf('expected result') > -1) {
-                if(matchFormat.indexOf('actual result') > -1) {
+            if(!!matchFormat && matchFormat.indexOf('steps to reproduce') > -1) {
+              if(!!matchFormat && matchFormat.indexOf('expected result') > -1) {
+                if(!!matchFormat && matchFormat.indexOf('actual result') > -1) {
 
                   t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
                     if(!!urlData && !!urlData.id){
@@ -349,9 +349,9 @@ bot.on('messageCreate', (msg) => {
         var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
         if(!!splitter && splitter.length < 2){
-          if(matchFormat.indexOf('steps to reproduce') > -1){
-            if(matchFormat.indexOf('expected result') > -1){
-              if(matchFormat.indexOf('actual result') > -1){
+          if(!!matchFormat && matchFormat.indexOf('steps to reproduce') > -1){
+            if(!!matchFormat && matchFormat.indexOf('expected result') > -1){
+              if(!!matchFormat && matchFormat.indexOf('actual result') > -1){
 
                 var attachment;
 
