@@ -105,7 +105,17 @@ bot.on('messageCreate', (msg) => {
       t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
         if(!!urlData.id){
           var status = "Can reproduce.";
-            repro(status, clientInfo, channelID, trelloURL, userID, userTag);
+          bot.getMessages(channelID).then((data) => {
+            var dataFinder = data.find(function(foundObj) {
+              return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
+            });
+            var editMsgCreate = dataFinder.content + "\n:white_check_mark: " + userTag;
+            if(clientInfo === trelloURL){
+              repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+            }else{
+              repro(status, clientInfo, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+            }
+          });
         }else{
           bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -124,7 +134,17 @@ bot.on('messageCreate', (msg) => {
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
           if(!!urlData.id){
             var status = "Can't reproduce.";
-            repro(status, clientInfo, channelID, trelloURL, userID, userTag);
+            bot.getMessages(channelID).then((data) => {
+              var dataFinder = data.find(function(foundObj) {
+                return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
+              });
+              var editMsgCreate = dataFinder.content + "\n:x: " + userTag;
+              if(clientInfo === trelloURL){
+                repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+              }else{
+                repro(status, clientInfo, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+              }
+            });
           }else{
             bot.createMessage(channelID, "<@" + userID + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -152,7 +172,7 @@ bot.on('messageCreate', (msg) => {
         var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$2");
         var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$6");
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-          if(!!urlData.id){
+          if(!!urlData && !!urlData.id){
             if(!!msg.attachments[0]){
               attachment = msg.attachments[0].url;
               addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name, userTag);
@@ -197,92 +217,110 @@ bot.on('messageCreate', (msg) => {
           var lowerCaseReport = report.toLowerCase();
           var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
-          if(!!splitter && splitter.length < 2 && !!matchFormat && matchFormat.length === 3 && matchFormat.indexOf('steps to reproduce') > -1 && matchFormat.indexOf('expected result')  > -1 && matchFormat.indexOf('actual result') > -1){
+          if(!!splitter && splitter.length < 2) {
+            if(matchFormat.indexOf('steps to reproduce') > -1) {
+              if(matchFormat.indexOf('expected result') > -1) {
+                if(matchFormat.indexOf('actual result') > -1) {
 
-            t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-              if(!!urlData.id){
+                  t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
+                    if(!!urlData && !!urlData.id){
+                      var attachment;
 
-                var attachment;
+                      var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
+                      var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
 
-                var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
-                var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
+                      var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
 
-                var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
+                      if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1) {
+                        var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
+                        var section5 = report.match(/(system setting)([\s\S]*)/gi);
 
-                if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1) {
-                  var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
-                  var section5 = report.match(/(system setting)([\s\S]*)/gi);
+                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
+                      }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1) {
+                        var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
+                        var section5 = report.match(/(client version)([\s\S]*)/gi);
 
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
-                }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1) {
-                  var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                  var section5 = report.match(/(client version)([\s\S]*)/gi);
+                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
+                      }else if(!!systemClient && systemClient.length === 2){
 
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
-                }else if(!!systemClient && systemClient.length === 2){
+                        var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
+                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
 
-                  var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        if(systemClient[0] === "client version"){
+                          var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
+                          var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                          var section6 = report.match(/(system setting)([\s\S]*)/gi);
+                          var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                        }else{
+                          var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
+                          var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                          var section6 = report.match(/(client version)([\s\S]*)/gi);
+                          var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                        }
+                        var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
+                      }else{
+                        var section4 = report.match(/(actual result)([\s\S]*)/gi);
+                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Clean;
+                      }
 
-                  if(systemClient[0] === "client version"){
-                    var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
-                    var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var section6 = report.match(/(system setting)([\s\S]*)/gi);
-                    var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                  }else{
-                    var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
-                    var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var section6 = report.match(/(client version)([\s\S]*)/gi);
-                    var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                  }
-                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
+                      var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
+                      var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                      if(!section2){
+                        section2.push(' ');
+                      }else if(!section3){
+                        section3.push(' ');
+                      }else if(!section4){
+                        section4.push(' ');
+                      }
+
+                      if(section2[0].indexOf(' - ') > -1){
+                        var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
+                        if(!section2String){
+                          section2String.push(' ');
+                        }
+                        const reportString = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
+                        if(!!msg.attachments[0]){
+                          attachment = msg.attachments[0].url;
+                        }else{
+                          attachment = undefined;
+                        }
+                        updateTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + userID + '>', userTag);
+                      }else{
+                        bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                          bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                        });
+                      }
+
+                    }else{
+                      bot.createMessage(channelID, "<@" + userID + "> I can’t find that issue in Trello. Please double check the URL.").then(delay(config.delayInMS)).then((innerMsg) => {
+                        bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                      });
+                    }
+                  });
+
                 }else{
-                  var section4 = report.match(/(actual result)([\s\S]*)/gi);
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean;
-                }
-
-                var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
-                var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-                if(!section2){
-                  section2.push(' ');
-                }else if(!section3){
-                  section3.push(' ');
-                }else if(!section4){
-                  section4.push(' ');
-                }
-
-                if(section2[0].indexOf(' - ') > -1){
-                  var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
-                  if(!section2String){
-                    section2String.push(' ');
-                  }
-                  const reportString = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
-                  if(!!msg.attachments[0]){
-                    attachment = msg.attachments[0].url;
-                  }else{
-                    attachment = undefined;
-                  }
-                  updateTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + userID + '>', userTag);
-                }else{
-                  bot.createMessage(channelID, "<@" + userID + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                  bot.createMessage(channelID, "<@" + userID + ">, you need to include `Actual Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                     bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   });
                 }
-
               }else{
-                bot.createMessage(channelID, "<@" + userID + "> I can’t find that issue in Trello. Please double check the URL.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.createMessage(channelID, "<@" + userID + ">, you need to include `Expected Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 });
               }
-            });
+            }else{
+              bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce: - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+              });
+            }
           }else{
-            bot.createMessage(channelID, "<@" + userID + ">, please use the standard `!edit <URL> | <content>` format.").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             });
           }
@@ -310,105 +348,122 @@ bot.on('messageCreate', (msg) => {
         var lowerCaseReport = report.toLowerCase();
         var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
-        if(!!splitter && splitter.length < 2 && !!matchFormat && matchFormat.length === 3 && matchFormat.indexOf('steps to reproduce') > -1 && matchFormat.indexOf('expected result')  > -1 && matchFormat.indexOf('actual result') > -1){
+        if(!!splitter && splitter.length < 2){
+          if(matchFormat.indexOf('steps to reproduce') > -1){
+            if(matchFormat.indexOf('expected result') > -1){
+              if(matchFormat.indexOf('actual result') > -1){
 
-              var attachment;
+                var attachment;
 
-              var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
-              var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
+                var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
+                var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
 
-              var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
+                var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
 
-              if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1){
-                var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
-                var section5 = report.match(/(system setting)([\s\S]*)/gi);
+                if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1){
+                  var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
+                  var section5 = report.match(/(system setting)([\s\S]*)/gi);
 
-                var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
-                var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
-              }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
-                var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                var section5 = report.match(/(client version)([\s\S]*)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
+                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
+                }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
+                  var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
+                  var section5 = report.match(/(client version)([\s\S]*)/gi);
 
-                var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
-                var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
-              }else if(!!systemClient && systemClient.length === 2){
-
-                var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-                if(systemClient[0] === "client version"){
-                  var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                   var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section6 = report.match(/(system setting)([\s\S]*)/gi);
-                  var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
+                  var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
+                }else if(!!systemClient && systemClient.length === 2){
+
+                  var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                  if(systemClient[0] === "client version"){
+                    var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
+                    var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                    var section6 = report.match(/(system setting)([\s\S]*)/gi);
+                    var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                  }else{
+                    var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
+                    var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                    var section6 = report.match(/(client version)([\s\S]*)/gi);
+                    var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                  }
+                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
+                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
                 }else{
-                  var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
-                  var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section6 = report.match(/(client version)([\s\S]*)/gi);
-                  var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                }
-                var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
-                var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
-              }else{
-                var section4 = report.match(/(actual result)([\s\S]*)/gi);
+                  var section4 = report.match(/(actual result)([\s\S]*)/gi);
 
-                var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
 
-                var combinedSections = section4Clean;
-                var repostCombinedSections = section4Clean;
-              }
-
-              var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
-              var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-              if(!section2){
-                section2.push(' ');
-              }else if(!section3){
-                section3.push(' ');
-              }else if(!section4){
-                section4.push(' ');
-              }
-
-              if(section2[0].indexOf(' - ') > -1){
-
-                var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
-
-                if(!section2String){
-                  section2String.push(' ');
+                  var combinedSections = section4Clean;
+                  var repostCombinedSections = section4Clean;
                 }
 
-                const reportStringSubmit = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
-                const repostReportString = "Reported by " + userTag + "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
-                var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
+                var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
+                var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
 
-                if(!!msg.attachments[0]){
-                  attachment = msg.attachments[0].url;
+                if(!section2){
+                  section2.push(' ');
+                }else if(!section3){
+                  section3.push(' ');
+                }else if(!section4){
+                  section4.push(' ');
+                }
+
+                if(section2[0].indexOf(' - ') > -1){
+
+                  var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
+
+                  if(!section2String){
+                    section2String.push(' ');
+                  }
+
+                  const reportStringSubmit = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
+                  const repostReportString = "Reported by " + userTag + "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
+                  var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
+
+                  if(!!msg.attachments[0]){
+                    attachment = msg.attachments[0].url;
+                  }else{
+                    attachment = undefined;
+                  }
+
+                  if(channelID === config.iosChannel){
+                    var listID = config.iosCard;
+                    sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "iOS", userTag, cleanRepostReport, msg.id);
+                  }else if(channelID === config.androidChannel){
+                    var listID = config.androidCard;
+                    sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Android", userTag, cleanRepostReport, msg.id);
+                  }else if(channelID === config.canaryChannel){
+                    var listID = config.canaryCard;
+                    sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Canary", userTag, cleanRepostReport, msg.id);
+                  }
                 }else{
-                  attachment = undefined;
-                }
-
-                if(channelID === config.iosChannel){
-                  var listID = config.iosCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "iOS", userTag, cleanRepostReport, msg.id);
-                }else if(channelID === config.androidChannel){
-                  var listID = config.androidCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Android", userTag, cleanRepostReport, msg.id);
-                }else if(channelID === config.canaryChannel){
-                  var listID = config.canaryCard;
-                  sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Canary", userTag, cleanRepostReport, msg.id);
+                  bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                    bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                  });
                 }
               }else{
-                bot.createMessage(channelID, "<@" + userID + "> Please format the list correctly ` - item one - item two - item three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.createMessage(channelID, "<@" + userID + ">, you need to include `Actual Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 });
               }
-
+            }else{
+              bot.createMessage(channelID, "<@" + userID + ">, you need to include `Expected Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+              });
+            }
+          }else{
+            bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce: - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+            });
+          }
         }else{
-          bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce:`, `Expected Results:` and `Actual Results:` in your report.").then(delay(config.delayInMS)).then((innerMsg) => {
+          bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           });
         }
@@ -420,7 +475,8 @@ bot.on('messageCreate', (msg) => {
     }
   }
 });
-function repro(status, clientInfo, channelID, trelloURL, userID, userTag){
+
+function repro(status, clientInfo, channelID, trelloURL, userID, userTag, editMsgID, editMsgContent, msgID){
   var sentRepro = function(error, info){
     if(!!error){
       bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -430,7 +486,10 @@ function repro(status, clientInfo, channelID, trelloURL, userID, userTag){
       bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.channel.id, msg_id.id);
       });
-      bot.createMessage(config.modLogChannel, userTag + ": " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      bot.editMessage(channelID, editMsgID, editMsgContent).then(delay(config.delayInMS)).then(() => {
+        bot.deleteMessage(channelID, msgID);
+      });
+      bot.createMessage(config.modLogChannel, "**" + userTag + "**: " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
     }
   }
   var reproInfo = {
@@ -438,6 +497,7 @@ function repro(status, clientInfo, channelID, trelloURL, userID, userTag){
   }
   t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
 }
+
 function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDateName, userTag){
 
   var attachmentAdded = function(attachmentAddedErr, dataAttachment){
@@ -454,7 +514,7 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
   }
   var addAttachment = {
     url: attachment,
-    name: userID
+    name: userTag
   }
   t.post('/1/cards/' + cardID + '/attachments', addAttachment, attachmentAdded);
 
@@ -505,7 +565,7 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID, userTag
       }
       var addAttachment = {
         url: attachment,
-        name: userID
+        name: userTag
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
