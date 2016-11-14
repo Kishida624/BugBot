@@ -529,7 +529,7 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
         if(!!attachmentAddedErr){
           console.log(attachmentAddedErr);
         }
-        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">").then(delay(config.delayInMS)).then(() => {
+        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
           bot.deleteMessage(channelID, msgID);
         });
         bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
@@ -539,7 +539,7 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
-      bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">").then(delay(config.delayInMS)).then(() => {
+      bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
         bot.deleteMessage(channelID, msgID);
       });
       bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
