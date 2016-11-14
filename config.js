@@ -19,6 +19,7 @@ var config = {
   androidCard: '57f2a30d861fa9b5816c9717',        //android user report card
   canaryCard: '5771677fda45a436c5b8d255',         //canary user report card
 
+  botID: '240545475118235648',                    //bot's user ID
   delayInMS: 15000                                //delay in ms for the bot to remove messages
 }
 module.exports = config;
