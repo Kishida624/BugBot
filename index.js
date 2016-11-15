@@ -96,6 +96,32 @@ bot.on('messageCreate', (msg) => {
     }
 
   if(channelID === config.androidChannel || channelID === config.canaryChannel || channelID === config.iosChannel){
+
+    if(command.toLowerCase() === "!addnote"){
+      var joinedMessage = messageSplit.join(' ');
+
+      var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
+      var note = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
+
+      t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
+        if(!!urlData && !!urlData.id){
+          if(note === trelloURL){
+            bot.createMessage(channelID, "<@" + userID + ">, please provide a note").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+              bot.deleteMessage(channelID, msg.id);
+            });
+          }else{
+            repro(note, undefined, channelID, trelloURL, userID, userTag, undefined, undefined, msg.id);
+          }
+        }else{
+          bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a note").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+            bot.deleteMessage(channelID, msg.id);
+          });
+        }
+      });
+    }
+
     if(command.toLowerCase() === "!canrepro"){
       var joinedMessage = messageSplit.join(' ');
 
@@ -103,17 +129,17 @@ bot.on('messageCreate', (msg) => {
       var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
 
       t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-        if(!!urlData.id){
-          var status = "Can reproduce.";
+        if(!!urlData && !!urlData.id){
+          var reproduction = "Can reproduce.";
           bot.getMessages(channelID).then((data) => {
             var dataFinder = data.find(function(foundObj) {
               return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
             });
             var editMsgCreate = dataFinder.content + "\n✅ " + userTag;
             if(clientInfo === trelloURL){
-              repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+              repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
             }else{
-              repro(status, clientInfo, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+              repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
             }
           });
         }else{
@@ -132,17 +158,17 @@ bot.on('messageCreate', (msg) => {
 
       if(!!trelloURL && (clientInfo !== trelloURL)){
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-          if(!!urlData.id){
-            var status = "Can't reproduce.";
+          if(!!urlData && !!urlData.id){
+            var reproduction = "Can't reproduce.";
             bot.getMessages(channelID).then((data) => {
               var dataFinder = data.find(function(foundObj) {
                 return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1;
               });
               var editMsgCreate = dataFinder.content + "\n❌ " + userTag;
               if(clientInfo === trelloURL){
-                repro(status, "", channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+                repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
               }else{
-                repro(status, clientInfo, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
+                repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
               }
             });
           }else{
@@ -476,7 +502,14 @@ bot.on('messageCreate', (msg) => {
   }
 });
 
-function repro(status, clientInfo, channelID, trelloURL, userID, userTag, editMsgID, editMsgContent, msgID){
+function repro(recievedData, reproduction, channelID, trelloURL, userID, userTag, editMsgID, editMsgContent, msgID){
+
+  if(!!reproduction){
+    var mergedContent = reproduction + '\n' + recievedData;
+  }else{
+    var mergedContent = recievedData;
+  }
+
   var sentRepro = function(error, info){
     if(!!error){
       bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -485,15 +518,18 @@ function repro(status, clientInfo, channelID, trelloURL, userID, userTag, editMs
     }else{
       bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.channel.id, msg_id.id);
-      });
-      bot.editMessage(channelID, editMsgID, editMsgContent).then(delay(config.delayInMS)).then(() => {
         bot.deleteMessage(channelID, msgID);
       });
-      bot.createMessage(config.modLogChannel, "**" + userTag + "**: " + status + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      if(!!editMsgID && !!editMsgContent){
+        bot.editMessage(channelID, editMsgID, editMsgContent);
+        bot.createMessage(config.modLogChannel, "**" + userTag + "**: " + reproduction + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      }else{
+        bot.createMessage(config.modLogChannel, "**" + userTag + "**: Added a note to `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      }
     }
   }
   var reproInfo = {
-    text: status + "\n" + clientInfo + "\n\n" + userTag
+    text: mergedContent + "\n\n" + userTag
   }
   t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
 }
@@ -529,13 +565,14 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
         if(!!attachmentAddedErr){
           console.log(attachmentAddedErr);
         }
-        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
+        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
           bot.deleteMessage(channelID, msgID);
         });
         bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
-        url: attachment
+        url: attachment,
+        name: userTag
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
