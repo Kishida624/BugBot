@@ -24,6 +24,7 @@ var config = {
 
   botID: '240545475118235648',                    //bot's user ID
   DTserverID: '197038439483310086',               //Discord Testers srver ID
-  delayInMS: 15000                                //delay in ms for the bot to remove messages
+  delayInMS: 15000,                               //delay in ms for the bot to remove messages
+  minuteDelay: 60000                              //one minute delay for bug queue
 }
 module.exports = config;
