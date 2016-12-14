@@ -1,5 +1,7 @@
 const Eris = require('eris');
 const config = require('./config.js');
+const fs = require('fs');
+var dataFile = require('./dataFile.json');
 
 var Trello = require("node-trello");
 var t = new Trello(config.trelloKey, config.trelloToken);
@@ -22,14 +24,16 @@ function delay(delayMS) {
   }
 }
 
+var maxTries = 0;
+
 bot.on('guildMemberUpdate', (guild, member, oldMember) => {
   if(oldMember.roles.indexOf(config.hunterRole) <= -1 && member.roles.indexOf(config.hunterRole) > -1){
     bot.createMessage(config.bugHunterChannel, 'Welcome <@' + member.user.id + '> to the Bug Hunters™!');
   }
 });
 
+
 bot.on('messageCreate', (msg) => {
-  if(msg.guild.id === config.DTserverID){
     var messageSplit = msg.content.split(' ');
     var command = messageSplit.shift();
 
@@ -96,7 +100,7 @@ bot.on('messageCreate', (msg) => {
         break;
       }
 
-    if(channelID === config.androidChannel || channelID === config.canaryChannel || channelID === config.iosChannel){
+    if(channelID === config.androidChannel || channelID === config.canaryChannel || channelID === config.iosChannel || channelID === config.linuxChannel){
 
       if(command.toLowerCase() === "!addnote"){
         var joinedMessage = messageSplit.join(' ');
@@ -105,7 +109,8 @@ bot.on('messageCreate', (msg) => {
         var note = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
 
         t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-          if(!!urlData && !!urlData.id){
+          console.log(urlData);
+          if(!!urlData && !!urlData.id && urlData.closed === false){
             if(note === trelloURL){
               bot.createMessage(channelID, "<@" + userID + ">, please provide a note").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
@@ -115,7 +120,7 @@ bot.on('messageCreate', (msg) => {
               repro(note, undefined, channelID, trelloURL, userID, userTag, undefined, undefined, msg.id);
             }
           }else{
-            bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a note").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL, a note, and make sure the issue is not closed.").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             });
@@ -127,31 +132,14 @@ bot.on('messageCreate', (msg) => {
         var joinedMessage = messageSplit.join(' ');
         var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
         var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
+        var canReproTries = 0;
+        var reproduction = "Can reproduce.";
+        var emoji = "\n✅ ";
 
         if(!!trelloURL && (clientInfo !== trelloURL)){
-          t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-            if(!!urlData && !!urlData.id){
-              var reproduction = "Can reproduce.";
-              bot.getMessages(channelID).then((data) => {
-                var dataFinder = data.find(function(foundObj) {
-                  return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
-                });
-                var editMsgCreate = dataFinder.content + "\n✅ " + userTag;
-                if(clientInfo === trelloURL){
-                  repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
-                }else{
-                  repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
-                }
-              });
-            }else{
-              bot.createMessage(channelID, "<@" + userID + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
-                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
-                bot.deleteMessage(channelID, msg.id);
-              });
-            }
-          });
+          preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msg.id, userID, emoji);
         }else{
-          bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
+          bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL, a client version, and make sure the issue is not closed.").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           });
@@ -162,31 +150,14 @@ bot.on('messageCreate', (msg) => {
         var joinedMessage = messageSplit.join(' ');
         var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
         var clientInfo = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$5");
+        var cantReproTries = 0;
+        var reproduction = "Can't reproduce.";
+        var emoji = "\n❌ ";
 
         if(!!trelloURL && (clientInfo !== trelloURL)){
-          t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-            if(!!urlData && !!urlData.id){
-              var reproduction = "Can't reproduce.";
-              bot.getMessages(channelID).then((data) => {
-                var dataFinder = data.find(function(foundObj) {
-                  return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
-                });
-                var editMsgCreate = dataFinder.content + "\n❌ " + userTag;
-                if(clientInfo === trelloURL){
-                  repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
-                }else{
-                  repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msg.id);
-                }
-              });
-            }else{
-              bot.createMessage(channelID, "<@" + userID + ">, incorrect url").then(delay(config.delayInMS)).then((innerMsg) => {
-                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
-                bot.deleteMessage(channelID, msg.id);
-              });
-            }
-          });
+          preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msg.id, userID, emoji);
         }else{
-          bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL and a client version").then(delay(config.delayInMS)).then((innerMsg) => {
+          bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL, a client version, and make sure the issue is not closed.").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           });
@@ -205,7 +176,7 @@ bot.on('messageCreate', (msg) => {
           var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$2");
           var attachmentUrl = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?(\s\|(?:\s)?(.*))?/gi, "$6");
           t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-            if(!!urlData && !!urlData.id){
+            if(!!urlData && !!urlData.id && urlData.closed === false){
               if(!!msg.attachments[0]){
                 attachment = msg.attachments[0].url;
                 addAttachment(channelID, attachment, trelloURL, userID, trelloURL, urlData.name, userTag);
@@ -255,25 +226,25 @@ bot.on('messageCreate', (msg) => {
                 if(!!matchFormat && matchFormat.indexOf('actual result') > -1) {
 
                   t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
-                    if(!!urlData && !!urlData.id){
+                    if(!!urlData && !!urlData.id && urlData.closed === false){
                       var attachment;
 
-                      var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
-                      var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
+                      var section2 = report.match(/(steps to reproduce(s)?(:)?)([\s\S]*)(?=expected result(s)?(:)?)/gi);
+                      var section3 = report.match(/(expected result(s)?(:)?)([\s\S]*)(?=actual result(s)?(:)?)/gi);
 
-                      var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
+                      var systemClient = lowerCaseReport.match(/\b(?:system setting(s)?(:)?)|\b(?:client version(s)?(:)?)/gi);
 
                       if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1) {
-                        var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
-                        var section5 = report.match(/(system setting)([\s\S]*)/gi);
+                        var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
+                        var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
 
                         var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                         var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
                         var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
                         var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
                       }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1) {
-                        var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                        var section5 = report.match(/(client version)([\s\S]*)/gi);
+                        var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
+                        var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
 
                         var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                         var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
@@ -281,24 +252,24 @@ bot.on('messageCreate', (msg) => {
                         var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
                       }else if(!!systemClient && systemClient.length === 2){
 
-                        var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
+                        var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
                         var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
 
                         if(systemClient[0] === "client version"){
-                          var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
+                          var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
                           var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                          var section6 = report.match(/(system setting)([\s\S]*)/gi);
+                          var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
                           var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
                         }else{
-                          var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
+                          var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
                           var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                          var section6 = report.match(/(client version)([\s\S]*)/gi);
+                          var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
                           var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                         }
                         var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
                         var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
                       }else{
-                        var section4 = report.match(/(actual result)([\s\S]*)/gi);
+                        var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)/gi);
                         var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
                         var combinedSections = section4Clean;
                         var repostCombinedSections = section4Clean;
@@ -382,146 +353,395 @@ bot.on('messageCreate', (msg) => {
         var hunter = msg.member.roles.indexOf(config.hunterRole);
         var admin = msg.member.roles.indexOf(config.adminRole);
 
-        if(dev > -1 || hunter > -1 || admin > -1){
-          var splitter = msg.content.match(/\|/g);
-          var joinedMessage = messageSplit.join(' ');
+        var splitter = msg.content.match(/\|/g);
+        var joinedMessage = messageSplit.join(' ');
 
-          const pipe = joinedMessage.indexOf("|");
-          const header = joinedMessage.substr(0, pipe).trim();
-          var report = joinedMessage.substr(pipe + 1).trim();
+        const pipe = joinedMessage.indexOf("|");
+        const header = joinedMessage.substr(0, pipe).trim();
+        var report = joinedMessage.substr(pipe + 1).trim();
 
-          var lowerCaseReport = report.toLowerCase();
-          var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
+        var lowerCaseReport = report.toLowerCase();
+        var matchFormat = lowerCaseReport.match(/\bsteps to reproduce|expected result|actual result/gi);
 
-          if(!!splitter && splitter.length < 2){
-            if(!!matchFormat && matchFormat.indexOf('steps to reproduce') > -1){
-              if(!!matchFormat && matchFormat.indexOf('expected result') > -1){
-                if(!!matchFormat && matchFormat.indexOf('actual result') > -1){
+        if(!!splitter && splitter.length < 2){
+          if(!!matchFormat && matchFormat.indexOf('steps to reproduce') > -1){
+            if(!!matchFormat && matchFormat.indexOf('expected result') > -1){
+              if(!!matchFormat && matchFormat.indexOf('actual result') > -1){
+                var attachment;
 
-                  var attachment;
+                var section2 = report.match(/(steps to reproduce(s)?(:)?)([\s\S]*)(?=expected result(s)?(:)?)/gi);
+                var section3 = report.match(/(expected result(s)?(:)?)([\s\S]*)(?=actual result(s)?(:)?)/gi);
 
-                  var section2 = report.match(/(steps to reproduce)([\s\S]*)(?=expected result)/gi);
-                  var section3 = report.match(/(expected result)([\s\S]*)(?=actual result)/gi);
+                var systemClient = lowerCaseReport.match(/\b(?:system setting(s)?(:)?)|\b(?:client version(s)?(:)?)/gi);
 
-                  var systemClient = lowerCaseReport.match(/\b(?:system setting)|\b(?:client version)/gi);
+                if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1){
+                  var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
+                  var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
 
-                  if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('system setting') > -1){
-                    var section4 = report.match(/(actual result)([\s\S]*)(?=system setting)/gi);
-                    var section5 = report.match(/(system setting)([\s\S]*)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
+                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
+                }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
+                  var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
+                  var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
 
-                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
-                    var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
-                  }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
-                    var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                    var section5 = report.match(/(client version)([\s\S]*)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
+                  var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
+                }else if(!!systemClient && systemClient.length === 2){
 
-                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                  if(systemClient[0] === "client version"){
+                    var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
                     var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
-                    var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
-                  }else if(!!systemClient && systemClient.length === 2){
-
-                    var section4 = report.match(/(actual result)([\s\S]*)(?=client version)/gi);
-                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-                    if(systemClient[0] === "client version"){
-                      var section5 = report.match(/(client version)([\s\S]*)(?=system setting)/gi);
-                      var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                      var section6 = report.match(/(system setting)([\s\S]*)/gi);
-                      var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                    }else{
-                      var section5 = report.match(/(system setting)([\s\S]*)(?=client version)/gi);
-                      var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                      var section6 = report.match(/(client version)([\s\S]*)/gi);
-                      var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                    }
-                    var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
-                    var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
+                    var section6 = report.match(/(system setting)([\s\S]*)/gi);
+                    var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
                   }else{
-                    var section4 = report.match(/(actual result)([\s\S]*)/gi);
-                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var combinedSections = section4Clean;
-                    var repostCombinedSections = section4Clean;
+                    var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
+                    var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                    var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
+                    var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                   }
-
-                  var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-                  if(!section2){
-                    section2.push(' ');
-                  }else if(!section3){
-                    section3.push(' ');
-                  }else if(!section4){
-                    section4.push(' ');
-                  }
-
-                  if(section2[0].indexOf(' - ') > -1){
-
-                    var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
-
-                    if(!section2String){
-                      section2String.push(' ');
-                    }
-
-                    const reportStringSubmit = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
-                    const repostReportString = "Reported by " + userTag + "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
-                    var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
-
-                    if(!!msg.attachments[0]){
-                      attachment = msg.attachments[0].url;
-                    }else{
-                      attachment = undefined;
-                    }
-
-                    if(channelID === config.iosChannel){
-                      var listID = config.iosCard;
-                      sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "iOS", userTag, cleanRepostReport, msg.id);
-                    }else if(channelID === config.androidChannel){
-                      var listID = config.androidCard;
-                      sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Android", userTag, cleanRepostReport, msg.id);
-                    }else if(channelID === config.canaryChannel){
-                      var listID = config.canaryCard;
-                      sendToTrello(listID, header, reportStringSubmit, channelID, attachment, "Canary", userTag, cleanRepostReport, msg.id);
-                    }
-                  }else{
-                    bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
-                      bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
-                    });
-                  }
+                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
+                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
                 }else{
-                  bot.createMessage(channelID, "<@" + userID + ">, you need to include `Actual Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
+                  var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)/gi);
+                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Clean;
+                  var repostCombinedSections = section4Clean;
+                }
+
+                var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
+                var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                if(!section2){
+                  section2.push(' ');
+                }else if(!section3){
+                  section3.push(' ');
+                }else if(!section4){
+                  section4.push(' ');
+                }
+
+                if(section2[0].indexOf(' - ') > -1){
+
+                  var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
+
+                  if(!section2String){
+                    section2String.push(' ');
+                  }
+
+                  const reportStringSubmit = '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
+                  const repostReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
+                  var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
+
+                  if(!!msg.attachments[0]){
+                    attachment = msg.attachments[0].url;
+                  }else{
+                    attachment = undefined;
+                  }
+
+                  if(channelID === config.iosChannel){
+                    var listID = config.iosCard;
+                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.iosChannel, listID, userID);
+                  }else if(channelID === config.androidChannel){
+                    var listID = config.androidCard;
+                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.androidChannel, listID, userID);
+                  }else if(channelID === config.canaryChannel){
+                    var listID = config.canaryCard;
+                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.canaryChannel, listID, userID);
+                  }else if (channelID === config.linuxChannel) {
+                    var listID = config.linuxCard;
+                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.linuxChannel, listID, userID);
+                  }
+
+                }else{
+                  bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
                     bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   });
                 }
               }else{
-                bot.createMessage(channelID, "<@" + userID + ">, you need to include `Expected Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.createMessage(channelID, "<@" + userID + ">, you need to include `Actual Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 });
               }
             }else{
-              bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce: - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
+              bot.createMessage(channelID, "<@" + userID + ">, you need to include `Expected Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               });
             }
           }else{
-            bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce: - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             });
           }
         }else{
-          bot.createMessage(channelID, "<@" + userID + ">, only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.").then(delay(config.delayInMS)).then((msg_id) => {
-            bot.deleteMessage(msg_id.channel.id, msg_id.id);
+          bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
+            bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           });
         }
       }
     }
-  }
+
+    if(command.toLowerCase() === "!ping"){
+      var dev = msg.member.roles.indexOf(config.devRole);
+      var tMod = msg.member.roles.indexOf(config.trelloModRole);
+      var admin = msg.member.roles.indexOf(config.adminRole);
+
+      if(dev > -1 || admin > -1 || tMod > -1){
+        bot.createMessage(channelID, "Pong!").then(delay(config.delayInMS)).then((innerMsg) =>{
+          bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+          bot.deleteMessage(innerMsg.channel.id, msg.id);
+        });
+      }
+    }
+
+    if((command.toLowerCase() === "!approve" || command.toLowerCase() === "!deny") && channelID === config.bugApprovalChannel){
+      var dev = msg.member.roles.indexOf(config.devRole);
+      var hunter = msg.member.roles.indexOf(config.hunterRole);
+      var admin = msg.member.roles.indexOf(config.adminRole);
+      if(dev > -1 || hunter > -1 || admin > -1){
+        if(!!messageSplit[0] && dataFile.reports.hasOwnProperty(messageSplit[0])){
+          var info = dataFile.reports[messageSplit[0]];
+          if(command.toLowerCase() === "!approve" && info.status === "open"){
+            if(info.userID !== userID){
+              if(info.hunter !== userID){
+                info.hunter = userID;
+                dataFile.reports[messageSplit[0]].approvedBy++;
+                var newAPUserCount = JSON.stringify(dataFile, null, 2);
+                fs.writeFile('./dataFile.json', newAPUserCount, function(err){
+                  if(!!err){
+                    console.log(err);
+                  }
+                  if(info.approvedBy === 2){
+                    var listID = info.listID,
+                        header = info.header,
+                        reportStringSubmit = info.reportMessage,
+                        loggedChannelID = info.channelID,
+                        attachment = info.attachment,
+                        os = info.os,
+                        loggedUserTag = info.userTag,
+                        cleanRepostReport = info.cleanRepostReport,
+                        loggedMsgID = info.msgID,
+                        loggedUserID = info.userID;
+
+                    sendToTrello(listID, header, reportStringSubmit, loggedChannelID, attachment, os, loggedUserTag, cleanRepostReport, loggedMsgID, loggedUserID);
+                    bot.createMessage(config.modLogChannel, "**" + userTag + "** approves of user report **#" + messageSplit[0] + "** `" + info.header + "`");
+                    bot.createMessage(channelID, "<@" + userID + "> you've successfully added your approval for this report. 2/2").then(delay(config.delayInMS)).then(innerMsg => {
+                      bot.deleteMessage(channelID, innerMsg.id);
+                      bot.deleteMessage(channelID, msg.id);
+                    });
+                    bot.deleteMessage(config.bugApprovalChannel, loggedMsgID);
+                  }else{
+                    bot.createMessage(channelID, "<@" + userID + "> you've successfully added your approval for this report. 1/2").then(delay(config.delayInMS)).then(innerMsg => {
+                      bot.deleteMessage(channelID, innerMsg.id);
+                      bot.deleteMessage(channelID, msg.id);
+                      bot.getMessages(config.bugApprovalChannel).then(data => {
+                        var infoFind = data.find(function(foundObj){
+                          return foundObj.author.id === config.botID && foundObj.content.indexOf(messageSplit[0]) > -1;
+                        });
+                        bot.editMessage(config.bugApprovalChannel, infoFind.id, infoFind.content + "\n1 out of 2 people approved this bug.");
+                      });
+                    });
+                    bot.createMessage(config.modLogChannel, "**" + userTag + "** approves of user report **#" + messageSplit[0] + "** `" + info.header + "`");
+                  };
+                });
+              }else{
+                bot.createMessage(channelID, "<@" + userID + "> you've already given your input on this report.").then(delay(config.delayInMS)).then(innerMsg => {
+                  bot.deleteMessage(channelID, innerMsg.id);
+                  bot.deleteMessage(channelID, msg.id);
+                });
+              }
+            }else{
+              bot.createMessage(channelID, "<@" + userID + ">, you can't approve your own report.").then(delay(config.delayInMS)).then(innerMsg => {
+                bot.deleteMessage(channelID, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }
+          }else if(command.toLowerCase() === "!approve" && info.status !== "open"){
+            if(info.userID !== userID){
+              bot.createMessage(channelID, "This report has already been closed.").then(delay(config.delayInMS)).then(innerMsg => {
+                bot.deleteMessage(channelID, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }else{
+              bot.createMessage(channelID, "<@" + userID + ">, you can't approve your own report.").then(delay(config.delayInMS)).then(innerMsg => {
+                bot.deleteMessage(channelID, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }
+          }else if(command.toLowerCase() === "!deny" && info.status === "open"){
+              //Close report
+            var recievedMessage = messageSplit.join(' ');
+            var contentMessage = recievedMessage.match(/(\d*)\s*\|\s*([\s\S]*)/i);
+            if(!!contentMessage){
+              if(info.hunter !== userID){
+                info.hunter = userID;
+                info.deniedBy++;
+                var newDNUserCount = JSON.stringify(dataFile, null, 2);
+                fs.writeFile('./dataFile.json', newDNUserCount, function(err){
+                  if(info.deniedBy === 2){
+                    info.status = "denied";
+                    var newStatus = JSON.stringify(dataFile, null, 2);
+                    fs.writeFile("./dataFile.json", newStatus, function(err){
+                      bot.createMessage(channelID, "<@" + userID + ">, you've successfully denied this report.").then(delay(config.delayInMS)).then(innerMsg => {
+                        bot.deleteMessage(channelID, innerMsg.id);
+                        bot.deleteMessage(channelID, msg.id);
+                        bot.deleteMessage(config.bugApprovalChannel, info.msgID);
+                      });
+                    });
+                    var userInfo = msg.member.guild.members.get(info.userID);
+                    if(userInfo.roles.indexOf(config.hunterRole) === -1){
+                      bot.getDMChannel(info.userID).then(DMInfo => {
+                        bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because `" + contentMessage[2] + " & " + info.denialReason + "`\nBut thank you for the report and we look forward to your next one!");
+                      });
+                    }
+                    bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
+                  }else{
+                    bot.createMessage(channelID, "<@" + userID + "> you've successfully denied this report. 1/2").then(delay(config.delayInMS)).then(innerMsg => {
+                      bot.deleteMessage(channelID, innerMsg.id);
+                      bot.deleteMessage(channelID, msg.id);
+                    });
+                    bot.getMessages(config.bugApprovalChannel).then(data => {
+                      var infoFind = data.find(function(foundObj){
+                        return foundObj.author.id === config.botID && foundObj.content.indexOf(messageSplit[0]) > -1;
+                      });
+                      bot.editMessage(config.bugApprovalChannel, infoFind.id, infoFind.content + "\n1 out of 2 people denied this bug.");
+                    });
+                    info.denialReason = contentMessage[2];
+                    var newDenial = JSON.stringify(dataFile, null, 2);
+                    fs.writeFile("./dataFile.json", newDenial, function(err){
+                      if(!!err){
+                        console.log(err);
+                      }
+                    });
+                    bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
+                  }
+                });
+              }else{
+              //Already approved or denied report
+              bot.createMessage(channelID, "<@" + userID + "> you've already given your input on this report.").then(delay(config.delayInMS)).then(innerMsg => {
+                bot.deleteMessage(channelID, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }
+            }else{
+              bot.createMessage(channelID, "<@" + userID + "> please include a reason for denying the report.").then(delay(config.delayInMS)).then(innerMsg => {
+                bot.deleteMessage(channelID, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }
+          }else if(command.toLowerCase() === "!deny" && dataFile.reports[messageSplit[0]].status !== "open"){
+            bot.createMessage(channelID, "<@" + userID + "> this report has already been closed.").then(delay(config.delayInMS)).then(innerMsg => {
+              bot.deleteMessage(channelID, innerMsg.id);
+              bot.deleteMessage(channelID, msg.id);
+            });
+          }
+        }else{
+          bot.createMessage(channelID, "Please provide a valid report ID").then(delay(config.delayInMS)).then(innerMsg => {
+            bot.deleteMessage(channelID, innerMsg.id);
+            bot.deleteMessage(channelID, msg.id);
+          });
+        }
+      }
+    }
 });
 
-function repro(recievedData, reproduction, channelID, trelloURL, userID, userTag, editMsgID, editMsgContent, msgID){
+function plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msgID, os, listID, userID){
+  var lastEntry = Object.keys(dataFile.reports).sort().reverse()[0];
+  var uniqueID = dataFile.reports[lastEntry].reportID + 1;
+  if(!dataFile.reports.hasOwnProperty(uniqueID)){
+    dataFile.reports[uniqueID] = {
+      header: header,
+      reportMessage: reportStringSubmit,
+      attachment: attachment,
+      cleanRepostReport: cleanRepostReport,
+      channelID: channelID,
+      userTag: userTag,
+      listID: listID,
+      status: "open",
+      os: os,
+      reportID: uniqueID,
+      approvedBy: 0,
+      deniedBy: 0,
+      userID: userID,
+      hunter: 0
+    };
+    var jsonObj = JSON.stringify(dataFile, null, 2);
+    fs.writeFile('./dataFile.json', jsonObj, function(err){
+      bot.createMessage(config.bugApprovalChannel, "---------------------------------------------\n<#" + os + ">: **" + userTag + " Reported:**" + cleanRepostReport + '\n\nThe report above needs to be approved.\nReport ID: **' + uniqueID + '**\n').then(innerMsg => {
+        dataFile.reports[uniqueID].msgID = innerMsg.id;
+        var JSONobj = JSON.stringify(dataFile, null, 2);
+        fs.writeFile('./dataFile.json', JSONobj, function(err){
+          if(!!err){
+            console.log(err);
+          }
+        });
+      }).catch((error) => {
+        console.log(error);
+      });
+      bot.createMessage(channelID, "<@" + userID + ">, your bug has been added to the approval queue. You will be notified when the status of your report updates.").then(delay(config.delayInMS)).then(innerMsg => {
+        bot.deleteMessage(channelID, innerMsg.id);
+        bot.deleteMessage(channelID, msgID);
+      });
+      if(!!err){
+        console.log(err);
+      }
+    });
+    maxTries = 0;
+  }else if(maxTries <= 5){
+    plebReport(reportStringSubmit, header, repostReportString, channelID, attachment, userTag, msgID, os);
+    maxTries + 1;
+  }else{
+    bot.createMessage(channelID, "Something went wrong, please try again");
+    maxTries = 0;
+  }
+}
+var preReproTries = 0;
+function preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msgID, userID, emoji){
+  t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
+    if(!!urlData){
+      if(!!urlData.id && urlData.closed === false){
+        bot.getMessages(channelID).then((data) => {
+          var dataFinder = data.find(function(foundObj) {
+            return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
+          });
+          var editMsgCreate = dataFinder.content + emoji + userTag;
+          if(clientInfo === trelloURL){
+            repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msgID);
+          }else{
+            repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, dataFinder.id, editMsgCreate, msgID);
+          }
+        });
+      }else if(!urlData.id){
+        bot.createMessage(channelID, "<@" + userID + ">, incorrect url.").then(delay(config.delayInMS)).then(innerMsg => {
+          bot.deleteMessage(channelID, innerMsg.id);
+          bot.deleteMessage(channelID, msg.id);
+        });
+      }else if(urlData.closed === true){
+        bot.createMessage(channelID, "<@" + userID + ">, this bug has already been closed.").then(delay(config.delayInMS)).then(innerMsg => {
+          bot.deleteMessage(channelID, innerMsg.id);
+          bot.deleteMessage(channelID, msg.id);
+        });
+      }
+    }else{
+      if(preReproTries >= 5){
+        preRepro(trelloURL, clientInfo);
+        preReproTries + 1;
+      }else{
+        bot.createMessage(channelID, "Something went wrong, please try again later.").then(delay(config.delayInMS)).then(innerMsg => {
+          bot.deleteMessages(channelID, innerMsg.id);
+        });
+        preReproTries = 0;
+      }
+    }
+  });
+}
 
+function repro(recievedData, reproduction, channelID, trelloURL, userID, userTag, editMsgID, editMsgContent, msgID){
   if(!!reproduction){
     var mergedContent = reproduction + '\n' + recievedData;
   }else{
@@ -573,7 +793,8 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
   t.post('/1/cards/' + cardID + '/attachments', addAttachment, attachmentAdded);
 
 }
-function sendToTrello(listID, header, report, channelID, attachment, whereFrom, userTag, repostReportString, msgID){
+
+function sendToTrello(listID, header, report, channelID, attachment, whereFrom, userTag, repostReportString, msgID, loggedUserID){
   var creationSuccess = function(creationSuccessErr, data) {
     if(!!creationSuccessErr){
       console.log(creationSuccessErr);
@@ -583,10 +804,10 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
         if(!!attachmentAddedErr){
           console.log(attachmentAddedErr);
         }
-        bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
+        bot.createMessage(channelID, "---------------------------------------------\nReported by " + userTag + repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**\n").then(delay(config.delayInMS)).then(() => {
           bot.deleteMessage(channelID, msgID);
         });
-        bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
+        bot.createMessage(config.modLogChannel, "<#" + whereFrom + ">: **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
       }
       var addAttachment = {
         url: attachment,
@@ -594,20 +815,30 @@ function sendToTrello(listID, header, report, channelID, attachment, whereFrom, 
       }
       t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
     }else{
-      bot.createMessage(channelID, repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**").then(delay(config.delayInMS)).then(() => {
+      bot.createMessage(channelID, "---------------------------------------------\nReported by " + userTag + repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**\n").then(delay(config.delayInMS)).then(() => {
         bot.deleteMessage(channelID, msgID);
       });
-      bot.createMessage(config.modLogChannel, whereFrom + ": **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.modLogChannel, "<#" + whereFrom + ">: **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
+    }
+
+    var guild = bot.guilds.find(guild => guild.id === config.DTserverID);
+    var userInfo = guild.members.get(loggedUserID);
+    if(userInfo.roles.indexOf(config.hunterRole) === -1){
+      bot.createMessage(config.modLogChannel, "<@110813477156720640> " + userTag + " needs a rank");
+      bot.getDMChannel(loggedUserID).then(DMInfo => {
+        bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + data.shortUrl + ">");
+      });
     }
   };
   var newCard = {
     name: header,
-    desc: report,
+    desc: "Reported by " + userTag + report,
     idList: listID,
     pos: 'top'
   };
   t.post('/1/cards/', newCard, creationSuccess);
 }
+
 function updateTrelloCard(cardID, attachment, channelID, report, userID, userTag, msgID, editReportString, editMsgID){
   var cardUpdated = function(error, data){
     if(!!attachment){
