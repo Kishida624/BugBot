@@ -731,7 +731,7 @@ function preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msgID
       }
     }else{
       if(preReproTries >= 5){
-        preRepro(trelloURL, clientInfo);
+        preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msgID, userID, emoji);
         preReproTries + 1;
       }else{
         bot.createMessage(channelID, "Something went wrong, please try again later.").then(delay(config.delayInMS)).then(innerMsg => {
