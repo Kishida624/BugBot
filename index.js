@@ -363,8 +363,12 @@ bot.on('messageCreate', (msg) => {
                   var dataFinder = data.find(function(foundObj) {
                     return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
                   });
-                  var editReportString = dataFinder.content.replace(/(Short description(s)?(:)?)([^\r\n]*)/gi, 'Short description: ' + newTitle);
-                  updateTrelloCardTitle(trelloURL, channelID, newTitle, '<@' + userID + '>', userTag, msg.id, editReportString, dataFinder.id);
+                  if(!!dataFinder){
+                    var editReportString = dataFinder.content.replace(/(Short description(s)?(:)?)([^\r\n]*)/gi, 'Short description: ' + newTitle);
+                    updateTrelloCardTitle(trelloURL, channelID, newTitle, '<@' + userID + '>', userTag, msg.id, editReportString, dataFinder.id);
+                  }else{
+                    updateTrelloCardTitle(trelloURL, channelID, newTitle, '<@' + userID + '>', userTag, msg.id, null, null);
+                  }
                 });
               }else{
                 bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -915,7 +919,9 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID, userTag
 
 function updateTrelloCardTitle(cardID, channelID, newTitle, userID, userTag, msgID, editReportString, editMsgID) {
   var cardUpdated = function(error, data){
-      bot.editMessage(channelID, editMsgID, editReportString);
+      if(!!editReportString && !!editMsgID){
+        bot.editMessage(channelID, editMsgID, editReportString);
+      }
       bot.createMessage(channelID, userID + ", the Bug Report title at <" + data.shortUrl + "> has been successfully updated.").then(delay(config.delayInMS)).then((msg_id) => {
         bot.deleteMessage(msg_id.channel.id, msg_id.id);
         bot.deleteMessage(channelID, msgID);
