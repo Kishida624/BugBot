@@ -595,7 +595,7 @@ bot.on('messageCreate', (msg) => {
                     var userInfo = msg.member.guild.members.get(info.userID);
                     if(userInfo.roles.indexOf(config.hunterRole) === -1){
                       bot.getDMChannel(info.userID).then(DMInfo => {
-                        bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\nBut thank you for the report and we look forward to your next one! \n\n```\n" + info.cleanRepostReport + "```");
+                        bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible.\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```");
                       });
                     }
                     bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
