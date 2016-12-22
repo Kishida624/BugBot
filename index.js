@@ -346,7 +346,45 @@ bot.on('messageCreate', (msg) => {
           });
         }
       } // Edit an existing reports
+      if(command.toLowerCase() === "!title"){
+        var dev = msg.member.roles.indexOf(config.devRole);
+        var hunter = msg.member.roles.indexOf(config.hunterRole);
+        var admin = msg.member.roles.indexOf(config.adminRole);
 
+        if(dev > -1 || hunter > -1 || admin > -1){
+          var joinedMessage = messageSplit.join(' ');
+          var trelloURL = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/gi, "$2");
+          var newTitle = joinedMessage.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)? \| ([\s\S]*)/gi, "$5");
+          
+          t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
+            if(!!urlData && !!urlData.id && urlData.closed === false){
+              if(!!trelloURL && (newTitle !== trelloURL)){
+                bot.getMessages(channelID).then((data) => {
+                  var dataFinder = data.find(function(foundObj) {
+                    return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
+                  });
+                  var editReportString = dataFinder.content.replace(/(Short description(s)?(:)?)([^\r\n]*)/gi, 'Short description: ' + newTitle);
+                  updateTrelloCardTitle(trelloURL, channelID, newTitle, '<@' + userID + '>', userTag, msg.id, editReportString, dataFinder.id);
+                });
+              }else{
+                bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
+                  bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                });
+              }
+            }else{
+              bot.createMessage(channelID, "<@" + userID + ">, please provide a valid URL, a new title, and make sure the issue is not closed.").then(delay(config.delayInMS)).then((innerMsg) => {
+                bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
+                bot.deleteMessage(channelID, msg.id);
+              });
+            }
+          });
+        }else{
+          bot.createMessage(channelID, "<@" + userID + ">, only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.").then(delay(config.delayInMS)).then((msg_id) => {
+            bot.deleteMessage(msg_id.channel.id, msg_id.id);
+            bot.deleteMessage(channelID, msg.id);
+          });
+        }
+      } // Edit an existing report's header
       if(command.toLowerCase() === "!submit"){ // Submit a report
         var dev = msg.member.roles.indexOf(config.devRole);
         var hunter = msg.member.roles.indexOf(config.hunterRole);
@@ -873,5 +911,20 @@ function updateTrelloCard(cardID, attachment, channelID, report, userID, userTag
     value: report
   }
   t.put('/1/cards/' + cardID + '/desc', updateCard, cardUpdated);
+}
+
+function updateTrelloCardTitle(cardID, channelID, newTitle, userID, userTag, msgID, editReportString, editMsgID) {
+  var cardUpdated = function(error, data){
+      bot.editMessage(channelID, editMsgID, editReportString);
+      bot.createMessage(channelID, userID + ", the Bug Report title at <" + data.shortUrl + "> has been successfully updated.").then(delay(config.delayInMS)).then((msg_id) => {
+        bot.deleteMessage(msg_id.channel.id, msg_id.id);
+        bot.deleteMessage(channelID, msgID);
+      });
+      bot.createMessage(config.modLogChannel, "**" + userTag + "** edited the title of report `"  + data.name + "` <" + data.shortUrl + ">");
+  }
+  var updateCard = {
+    value: newTitle
+  }
+  t.put('/1/cards/' + cardID + '/name', updateCard, cardUpdated);
 }
 bot.connect();
