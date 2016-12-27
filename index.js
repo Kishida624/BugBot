@@ -55,7 +55,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#1 " + err);
               });
               bot.createMessage(config.modLogChannel, "Gave `Android Alpha` to **" + userTag + "**");
             });
@@ -68,7 +68,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#2 " + err);
               });
               bot.createMessage(config.modLogChannel, "Removed `Android Alpha` from **" + userTag + "**");
             });
@@ -87,7 +87,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#3 " + err);
               });
               bot.createMessage(config.modLogChannel, "Gave `iOSTestflight` to **" + userTag + "**");
             });
@@ -100,7 +100,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#4 " + err);
               });
               bot.createMessage(config.modLogChannel, "Removed `iOSTestflight` from **" + userTag + "**");
             });
@@ -123,7 +123,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#5 " + err);
               });
             }else{
               repro(note, undefined, channelID, trelloURL, userID, userTag, undefined, undefined, msg.id);
@@ -133,7 +133,7 @@ bot.on('messageCreate', (msg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             }).catch((err) => {
-              console.log(err);
+              console.log("#6 " + err);
             });
           }
         });
@@ -154,7 +154,7 @@ bot.on('messageCreate', (msg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           }).catch((err) => {
-            console.log(err);
+            console.log("#6 " + err);
           });
         }
       }
@@ -174,7 +174,7 @@ bot.on('messageCreate', (msg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           }).catch((err) => {
-            console.log(err);
+            console.log("#7 " + err);
           });
         }
       }
@@ -198,7 +198,7 @@ bot.on('messageCreate', (msg) => {
                 bot.createMessage(channelID, "<@" + userID + "> your attachment has been added.").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#8 " + err);
                 });
               }else if(!!attachmentUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig)){
                 attachment = attachmentUrl;
@@ -206,14 +206,14 @@ bot.on('messageCreate', (msg) => {
                 bot.createMessage(channelID, "<@" + userID + "> your attachment has been added.").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#9 " + err);
                 });
               }else{
                 bot.createMessage(channelID, "<@" + userID + "> Please include a valid image").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   bot.deleteMessage(channelID, msg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#10 " + err);
                 });
               }
 
@@ -230,13 +230,13 @@ bot.on('messageCreate', (msg) => {
                 var newAttachment = JSON.stringify(dataFile, null, 2);
                 fs.writeFile("./dataFile.json", newAttachment, function(err){
                   if(!!err){
-                    console.log(err);
+                    console.log("#11 " + err);
                   }
                 });
                 bot.createMessage(channelID, "<@" + userID + "> your attachment has been added.").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#12 " + err);
                 });
               }else if(!!attachmentUrl.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig)){
                 attachment = attachmentUrl;
@@ -249,17 +249,17 @@ bot.on('messageCreate', (msg) => {
                     bot.editMessage(config.bugApprovalChannel, infoFind.id, infoFind.content + "\n" + attachment);
                   }
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#13 " + err);
                 });
                 bot.createMessage(channelID, "<@" + userID + "> your attachment has been added.").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#14 " + err);
                 });
                 var newAttachment = JSON.stringify(dataFile, null, 2);
                 fs.writeFile("./dataFile.json", newAttachment, function(err){
                   if(!!err){
-                    console.log(err);
+                    console.log("#15 " + err);
                   }
                 });
               }else{
@@ -267,7 +267,7 @@ bot.on('messageCreate', (msg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   bot.deleteMessage(channelID, msg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#16 " + err);
                 });
               }
             }else{
@@ -275,7 +275,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#17 " + err);
               });
             }
           });
@@ -284,7 +284,7 @@ bot.on('messageCreate', (msg) => {
             bot.deleteMessage(msg_id.channel.id, msg_id.id);
             bot.deleteMessage(channelID, msg.id);
           }).catch((err) => {
-            console.log(err);
+            console.log("#18 " + err);
           });
         }
       } // Add attachments to reports // Attach files to existing reports
@@ -565,8 +565,6 @@ bot.on('messageCreate', (msg) => {
 
                   if(!!msg.attachments[0]){
                     attachment = msg.attachments[0].url;
-                  }else{
-                    attachment = undefined;
                   }
 
                   if(channelID === config.iosChannel){
@@ -587,35 +585,35 @@ bot.on('messageCreate', (msg) => {
                   bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
                     bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                   }).catch((err) => {
-                    console.log(err);
+                    console.log("#19 " + err);
                   });
                 }
               }else{
                 bot.createMessage(channelID, "<@" + userID + ">, you need to include `Actual Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                   bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#20 " + err);
                 });
               }
             }else{
               bot.createMessage(channelID, "<@" + userID + ">, you need to include `Expected Result:`").then(delay(config.delayInMS)).then((innerMsg) => {
                 bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#21 " + err);
               });
             }
           }else{
             bot.createMessage(channelID, "<@" + userID + ">, you need to include `Steps to Reproduce: - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
               bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
             }).catch((err) => {
-              console.log(err);
+              console.log("#22 " + err);
             });
           }
         }else{
           bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
             bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           }).catch((err) => {
-            console.log(err);
+            console.log("#23 " + err);
           });
         }
       }
@@ -631,7 +629,7 @@ bot.on('messageCreate', (msg) => {
           bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
           bot.deleteMessage(innerMsg.channel.id, msg.id);
         }).catch((err) => {
-          console.log(err);
+          console.log("#Ping " + err);
         });
       }
     }
@@ -657,7 +655,7 @@ bot.on('messageCreate', (msg) => {
                   var newAPUserCount = JSON.stringify(dataFile, null, 2);
                   fs.writeFile('./dataFile.json', newAPUserCount, function(err){
                     if(!!err){
-                      console.log(err);
+                      console.log("#24 " + err);
                     }
                     if(info.approvedBy === 2){ //Reprot is approved and sent to Trello
                       var listID = info.listID,
@@ -679,7 +677,7 @@ bot.on('messageCreate', (msg) => {
                         bot.deleteMessage(channelID, innerMsg.id);
                         bot.deleteMessage(channelID, msg.id);
                       }).catch((err) => {
-                        console.log(err);
+                        console.log("#25 " + err);
                       });
 
                       bot.deleteMessage(config.bugApprovalChannel, loggedMsgID);
@@ -689,7 +687,7 @@ bot.on('messageCreate', (msg) => {
                       var newStatus = JSON.stringify(dataFile, null, 2);
                       fs.writeFile("./dataFile.json", newStatus, function(err){
                         if(!!err){
-                          console.log(err);
+                          console.log("#26 " + err);
                         }
                       });
                     }else{
@@ -704,10 +702,10 @@ bot.on('messageCreate', (msg) => {
                           var message = splitMsg[0] + "Report ID: **" + messageSplit[0] + "**" + "\n✅ " + userTag + " **APPROVED** this report." + splitMsg[1];
                           bot.editMessage(config.bugApprovalChannel, infoFind.id, message);
                         }).catch((err) => {
-                          console.log(err);
+                          console.log("#27 " + err);
                         });
                       }).catch((err) => {
-                        console.log(err);
+                        console.log("#28 " + err);
                       });
                       bot.createMessage(config.modLogChannel, "**" + userTag + "** approves of user report **#" + messageSplit[0] + "** `" + info.header + "`");
                     };
@@ -717,7 +715,7 @@ bot.on('messageCreate', (msg) => {
                     bot.deleteMessage(channelID, innerMsg.id);
                     bot.deleteMessage(channelID, msg.id);
                   }).catch((err) => {
-                    console.log(err);
+                    console.log("#29 " + err);
                   });
                 }
               }else{
@@ -725,7 +723,7 @@ bot.on('messageCreate', (msg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                   bot.deleteMessage(channelID, msg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#30 " + err);
                 });
               }
             }else{
@@ -733,7 +731,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(channelID, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#31 " + err);
               });
             }
 
@@ -765,7 +763,7 @@ bot.on('messageCreate', (msg) => {
                     bot.getDMChannel(info.userID).then(DMInfo => {
                       bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible.\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```");
                     }).catch((err) => {
-                      console.log(err);
+                      console.log("#32 " + err);
                     });
                     bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
                   }else{
@@ -773,7 +771,7 @@ bot.on('messageCreate', (msg) => {
                       bot.deleteMessage(channelID, innerMsg.id);
                       bot.deleteMessage(channelID, msg.id);
                     }).catch((err) => {
-                      console.log(err);
+                      console.log("#33 " + err);
                     });
                     bot.getMessages(config.bugApprovalChannel).then(data => {
                       var infoFind = data.find(function(foundObj){
@@ -783,7 +781,7 @@ bot.on('messageCreate', (msg) => {
                       var message = splitMsg[0] + "Report ID: **" + messageSplit[0] + "**" + "\n❌ " + userTag + " **DENIED** this report because `" + contentMessage[2] + "`." + splitMsg[1];
                       bot.editMessage(config.bugApprovalChannel, infoFind.id, message);
                     }).catch((err) => {
-                      console.log(err);
+                      console.log("#33 " + err);
                     });
                     bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
                   }
@@ -794,7 +792,7 @@ bot.on('messageCreate', (msg) => {
                   bot.deleteMessage(channelID, innerMsg.id);
                   bot.deleteMessage(channelID, msg.id);
                 }).catch((err) => {
-                  console.log(err);
+                  console.log("#34 " + err);
                 });
               }
             }else{
@@ -802,7 +800,7 @@ bot.on('messageCreate', (msg) => {
                 bot.deleteMessage(channelID, innerMsg.id);
                 bot.deleteMessage(channelID, msg.id);
               }).catch((err) => {
-                console.log(err);
+                console.log("#35 " + err);
               });
             }
 
@@ -811,7 +809,7 @@ bot.on('messageCreate', (msg) => {
               bot.deleteMessage(channelID, innerMsg.id);
               bot.deleteMessage(channelID, msg.id);
             }).catch((err) => {
-              console.log(err);
+              console.log("#36 " + err);
             });
           }
         }else{
@@ -819,7 +817,7 @@ bot.on('messageCreate', (msg) => {
             bot.deleteMessage(channelID, innerMsg.id);
             bot.deleteMessage(channelID, msg.id);
           }).catch((err) => {
-            console.log(err);
+            console.log("#37 " + err);
           });
         }
       }
@@ -857,20 +855,20 @@ function plebReport(reportStringSubmit, header, cleanRepostReport, channelID, at
         var JSONobj = JSON.stringify(dataFile, null, 2);
         fs.writeFile('./dataFile.json', JSONobj, function(err){
           if(!!err){
-            console.log(err);
+            console.log("#38 " + err);
           }
         });
-      }).catch((error) => {
-        console.log(error);
+      }).catch((err) => {
+        console.log("#39 " + err);
       });
       bot.createMessage(channelID, "<@" + userID + ">, your bug has been added to the approval queue. You will be notified when the status of your report updates.").then(delay(config.delayInMS)).then(innerMsg => {
         bot.deleteMessage(channelID, innerMsg.id);
         bot.deleteMessage(channelID, msgID);
       }).catch((err) => {
-        console.log(err);
+        console.log("#40 " + err);
       });
       if(!!err){
-        console.log(err);
+        console.log("#41 " + err);
       }
     });
     maxTries = 0;
@@ -904,10 +902,11 @@ function queueRepro(uniqueID, channelID, trelloURL){
 
     var userTag = info.hunterTag[queueReproQueue - 1];
     var clientInfo = info.hunterReproSystem[queueReproQueue - 1];
-    console.log(uniqueID + " " + channelID + " " + trelloURL);
     queueReproQueue++;
     preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, null, null, emoji, uniqueID);
-    queueRepro(uniqueID, channelID, trelloURL);
+    setTimeout(function() {
+      queueRepro(uniqueID, channelID, trelloURL);
+    }, 2000);
   }
 }
 
@@ -933,22 +932,21 @@ function preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msgID
             repro(clientInfo, reproduction, channelID, trelloURL, userID, userTag, null, null, msgID);
           }
         }).catch((err) => {
-          console.log("preRepro");
-          console.log(err);
+          console.log("#42 " + err);
         });
       }else if(urlData.closed === true){
         bot.createMessage(channelID, "<@" + userID + ">, this bug has already been closed.").then(delay(config.delayInMS)).then(innerMsg => {
           bot.deleteMessage(channelID, innerMsg.id);
           bot.deleteMessage(channelID, msgID);
         }).catch((err) => {
-          console.log(err);
+          console.log("#43 " + err);
         });
       }else if(!urlData.id){
         bot.createMessage(channelID, "<@" + userID + ">, incorrect url.").then(delay(config.delayInMS)).then(innerMsg => {
           bot.deleteMessage(channelID, innerMsg.id);
           bot.deleteMessage(channelID, msgID);
         }).catch((err) => {
-          console.log(err);
+          console.log("#44 " + err);
         });
       }
     }else{
@@ -959,7 +957,7 @@ function preRepro(trelloURL, clientInfo, reproduction, userTag, channelID, msgID
         bot.createMessage(channelID, "Something went wrong, please try again later.").then(delay(config.delayInMS)).then(innerMsg => {
           bot.deleteMessages(channelID, innerMsg.id);
         }).catch((err) => {
-          console.log(err);
+          console.log("#45 " + err);
         });
         preReproTries = 0;
       }
@@ -979,15 +977,15 @@ function repro(recievedData, reproduction, channelID, trelloURL, userID, userTag
       bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
         bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
       }).catch((err) => {
-        console.log(err);
+        console.log("#46 " + err);
       });
     }else{
-      if(userID !== null){
+      if(!!userID){
         bot.createMessage(channelID, "<@" + userID + ">, your note has been added to the ticket.").then(delay(config.delayInMS)).then((msg_id) => {
           bot.deleteMessage(msg_id.channel.id, msg_id.id);
           bot.deleteMessage(channelID, msgID);
         }).catch((err) => {
-          console.log(err);
+          console.log("#47 " + err);
         });
         if(!!editMsgID && !!editMsgContent){
           bot.editMessage(channelID, editMsgID, editMsgContent);
@@ -1015,7 +1013,7 @@ function addAttachment(channelID, attachment, cardID, userID, trelloURL, urlDate
       bot.createMessage(channelID, "Something went wrong, please try again").then(delay(config.delayInMS)).then((innerMsg) => {
         bot.deleteMessage(innerMsg.channel.id, innerMsg.id);
       }).catch((err) => {
-        console.log(err);
+        console.log("#48 " + err);
       });
     }else{
       /*
@@ -1044,7 +1042,7 @@ function queueAttachment(key, msgID, channelID, trelloID){
   if(attachmentQueueNumber !== info.attachment.length && attachmentQueueNumber < info.attachment.length){
     var attachmentAdded = function(attachmentAddedErr, dataAttachment){
       if(!!attachmentAddedErr){
-        console.log(attachmentAddedErr);
+        console.log("Queue attach: " + attachmentAddedErr);
       }
       /*
       bot.getMessage(channelID, msgID).then((innerMsg) => {
@@ -1073,7 +1071,7 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
 
     bot.createMessage(channelID, "---------------------------------------------\nReported by " + userTag + repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**\n").then(delay(config.delayInMS)).then((innerMsg) => {
       bot.deleteMessage(channelID, msgID);
-      if(dataFile.reports[uniqueID].attachment.length !== 0){
+      if(dataFile.reports[uniqueID].attachment.length !== 0 && !!dataFile.reports[uniqueID].attachment[0]){
         queueAttachment(uniqueID, innerMsg.id, channelID, data.id);
       }
     });
@@ -1089,7 +1087,7 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
       bot.getDMChannel(loggedUserID).then(DMInfo => {
         bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + data.shortUrl + ">");
       }).catch((err) => {
-        console.log(err);
+        console.log("#50 " + err);
       });
     }
 
@@ -1097,7 +1095,7 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
     var addTrelloURL = JSON.stringify(dataFile, null, 2);
     fs.writeFile('./dataFile.json', addTrelloURL, function(err){
       if(!!err){
-        console.log(err);
+        console.log("#51 " + err);
       }
       var trelloURL = data.shortUrl.replace(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?/gi, "$2");
       queueRepro(uniqueID, channelID, trelloURL);
@@ -1124,7 +1122,7 @@ function editTrelloCard(cardID, attachment, channelID, report, userID, userTag, 
           bot.deleteMessage(msg_id.channel.id, msg_id.id);
           bot.deleteMessage(channelID, msgID);
         }).catch((err) => {
-          console.log(err);
+          console.log("#52 " + err);
         });
         bot.createMessage(config.modLogChannel, "**" + userTag + "** edited this report `" + data.name + "` <" + data.shortUrl + ">");
       }
@@ -1139,7 +1137,7 @@ function editTrelloCard(cardID, attachment, channelID, report, userID, userTag, 
         bot.deleteMessage(msg_id.channel.id, msg_id.id);
         bot.deleteMessage(channelID, msgID);
       }).catch((err) => {
-        console.log(err);
+        console.log("#53 " + err);
       });
       bot.createMessage(config.modLogChannel, "**" + userTag + "** edited this report `"  + data.name + "` <" + data.shortUrl + ">");
     }
