@@ -322,52 +322,52 @@ bot.on('messageCreate', (msg) => {
                         var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
                         var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
 
-                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                        var section5Clean = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                        var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
-                        var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
+                        var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var section5Content = section5[0].replace(/(System Setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Content + "\n####System settings:\n" + section5Content;
+                        var repostCombinedSections = section4Content + "\n**System settings:**" + section5Content;
                       }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1) {
                         var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
                         var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
 
-                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                        var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                        var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
-                        var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
+                        var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var section5Content = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Content + "\n####Client version:\n" + section5Content;
+                        var repostCombinedSections = section4Content + "\n**Client version:**" + section5Content;
                       }else if(!!systemClient && systemClient.length === 2){
-                          if(systemClient[0] === "client version"){
-                              
-                            var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
-                            var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                            var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
-                            var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                            var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
-                            var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                          }else if(systemClient[0] === "system setting"){
-                              
-                            var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
-                            var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                            var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
-                            var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                            var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/i);
-                            var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                          }
-                        var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
-                        var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
+                        if(systemClient[0] === "client version"){
+
+                          var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                          var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                          var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                          var section5Content = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                          var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
+                          var section6Content = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                        }else if(systemClient[0] === "system setting"){
+
+                          var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                          var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                          var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                          var section5Content = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                          var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/i);
+                          var section6Content = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                        }
+                        var combinedSections = section4Content + "\n####System settings:\n" + section5Content + "\n####Client version:\n" + section6Content;
+                        var repostCombinedSections = section4Content + "\n**System settings:**" + section5Content + "\n**Client version:**" + section6Content;
                       }else{
                         var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)/gi);
-                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                        var combinedSections = section4Clean;
-                        var repostCombinedSections = section4Clean;
+                        var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                        var combinedSections = section4Content;
+                        var repostCombinedSections = section4Content;
                       }
 
-                      var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
-                      var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
+                      var section2Content = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
+                      var section3Content = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
 
                       if(!section2){
                         section2.push(' ');
@@ -378,11 +378,11 @@ bot.on('messageCreate', (msg) => {
                       }
 
                       if(section2[0].indexOf(' - ') > -1){
-                        var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
+                        var section2String = section2Content.replace(/(-)\s/g, '\n$&'); // give new lines to the list
                         if(!section2String){
                           section2String.push(' ');
                         }
-                        const reportString = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
+                        const reportString = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Content + '\n####Actual result:\n' + combinedSections;
 
                         if(!!msg.attachments[0]){
                           attachment = msg.attachments[0].url;
@@ -396,7 +396,7 @@ bot.on('messageCreate', (msg) => {
                           var returnedChatMsg = dataFinder.content.split('**Reproducibility:**');
                           var header = returnedChatMsg[0].match(/(?:\*\*Short description:\*\*\s)(.*)/i);
                           var trelloLinkInMsg = returnedChatMsg[0].match(/(https:\/\/trello.com\/c\/[A-Za-z0-9\?&=]+)/i);
-                          const editReportChatString = "---------------------------------------------\nReported by " + userTag + "\n**Short description:** " + header[1] + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
+                          const editReportChatString = "---------------------------------------------\nReported by " + userTag + "\n**Short description:** " + header[1] + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Content + "\n**Actual result:** " + repostCombinedSections;
                           var cleanEditReport = editReportChatString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
                           var fixedEditMessage = cleanEditReport + '\n<' + trelloLinkInMsg[1] + '>\n\n**Reproducibility:**' + returnedChatMsg[1];
 
@@ -511,52 +511,52 @@ bot.on('messageCreate', (msg) => {
                   var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
                   var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
 
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean;
-                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean;
+                  var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section5Content = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Content + "\n####System settings:\n" + section5Content;
+                  var repostCombinedSections = section4Content + "\n**System settings:**" + section5Content;
                 }else if(!!systemClient && systemClient.length === 1 && systemClient.indexOf('client version') > -1){
                   var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
                   var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
 
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
-                  var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
+                  var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var section5Content = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Content + "\n####Client version:\n" + section5Content;
+                  var repostCombinedSections = section4Content + "\n**Client version:**" + section5Content;
                 }else if(!!systemClient && systemClient.length === 2){
                   if(systemClient[0] === "client version"){
-                              
-                     var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
-                     var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                             
-                     var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
-                     var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                     var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
-                     var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
-                   }else if(systemClient[0] === "system setting"){
-                              
+
+                    var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                    var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                    var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                    var section5Content = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                    var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
+                    var section6Content = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+
+                  }else if(systemClient[0] === "system setting"){
+
                     var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
-                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
+                    var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+
                     var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
-                    var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                              
+                    var section5Content = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+
                     var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/i);
-                    var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                    var section6Content = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                   }
-                  var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
-                  var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
+                  var combinedSections = section4Content + "\n####System settings:\n" + section5Content + "\n####Client version:\n" + section6Content;
+                  var repostCombinedSections = section4Content + "\n**System settings:**" + section5Content + "\n**Client version:**" + section6Content;
                 }else{
                   var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)/gi);
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-                  var combinedSections = section4Clean;
-                  var repostCombinedSections = section4Clean;
+                  var section4Content = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                  var combinedSections = section4Content;
+                  var repostCombinedSections = section4Content;
                 }
 
-                var section2Clean = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
-                var section3Clean = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
+                var section2Content = section2[0].replace(/(steps to reproduce(s)?(:)?)([\s\S]*)/gi, '$4');
+                var section3Content = section3[0].replace(/(expected result(s)?(:)?)([\s\S]*)/gi, '$4');
 
                 if(!section2){
                   section2.push(' ');
@@ -568,14 +568,14 @@ bot.on('messageCreate', (msg) => {
 
                 if(section2[0].indexOf(' - ') > -1){
 
-                  var section2String = section2Clean.replace(/(-)\s/g, '\n$&'); // give new lines to the list
+                  var section2String = section2Content.replace(/(-)\s/g, '\n$&'); // give new lines to the list
 
                   if(!section2String){
                     section2String.push(' ');
                   }
 
-                  const reportStringSubmit = '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Clean + '\n####Actual result:\n' + combinedSections;
-                  const repostReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Clean + "\n**Actual result:** " + repostCombinedSections;
+                  const reportStringSubmit = '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Content + '\n####Actual result:\n' + combinedSections;
+                  const repostReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + section2String + "\n**Expected result:** " + section3Content + "\n**Actual result:** " + repostCombinedSections;
                   var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
 
                   if(!!msg.attachments[0]){
