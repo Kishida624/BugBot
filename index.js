@@ -288,13 +288,13 @@ bot.on('messageCreate', (msg) => {
           });
         }
       } // Add attachments to reports // Attach files to existing reports
+
       if(command.toLowerCase() === "!edit"){
         var dev = msg.member.roles.indexOf(config.devRole);
         var hunter = msg.member.roles.indexOf(config.hunterRole);
         var admin = msg.member.roles.indexOf(config.adminRole);
 
         if(dev > -1 || hunter > -1 || admin > -1){
-          var attachment;
 
           var joinedMessage = messageSplit.join(' ');
           var splitter = msg.content.match(/\|/g);
@@ -311,7 +311,6 @@ bot.on('messageCreate', (msg) => {
 
                   t.get("/1/cards/" + trelloURL, { }, function(errorURL, urlData) {
                     if(!!urlData && !!urlData.id && urlData.closed === false){
-                      var attachment;
 
                       var section2 = report.match(/(steps to reproduce(s)?(:)?)([\s\S]*)(?=expected result(s)?(:)?)/gi);
                       var section3 = report.match(/(expected result(s)?(:)?)([\s\S]*)(?=actual result(s)?(:)?)/gi);
@@ -385,9 +384,9 @@ bot.on('messageCreate', (msg) => {
                         const reportString = "Reported by " + userTag + '\n\n####Steps to reproduce:' + section2String + '\n\n####Expected result:\n' + section3Content + '\n####Actual result:\n' + combinedSections;
 
                         if(!!msg.attachments[0]){
-                          attachment = msg.attachments[0].url;
-                        }else{
-                          attachment = undefined;
+                          bot.createMessage(channelID, "<@" + userID + "> please use the attach command to attach images instead of embeding images to the edit report").then(delay(config.delayInMS)).then((innerMsg) => {
+                            bot.deleteMessage(channelID, innerMsg.id);
+                          });
                         }
                         bot.getMessages(channelID).then((data) => {
                           var dataFinder = data.find(function(foundObj) {
@@ -400,7 +399,7 @@ bot.on('messageCreate', (msg) => {
                           var cleanEditReport = editReportChatString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
                           var fixedEditMessage = cleanEditReport + '\n<' + trelloLinkInMsg[1] + '>\n\n**Reproducibility:**' + returnedChatMsg[1];
 
-                          editTrelloCard(trelloURL, attachment, channelID, reportString, '<@' + userID + '>', userTag, msg.id, fixedEditMessage, dataFinder.id);
+                          editTrelloCard(trelloURL, channelID, reportString, '<@' + userID + '>', userTag, msg.id, fixedEditMessage, dataFinder.id);
                         });
                       }else{
                         bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -501,7 +500,6 @@ bot.on('messageCreate', (msg) => {
           if(!!matchFormat && matchFormat.indexOf('steps to reproduce') > -1){
             if(!!matchFormat && matchFormat.indexOf('expected result') > -1){
               if(!!matchFormat && matchFormat.indexOf('actual result') > -1){
-                var attachment;
 
                 var section2 = report.match(/(steps to reproduce(s)?(:)?)([\s\S]*)(?=expected result(s)?(:)?)/gi);
                 var section3 = report.match(/(expected result(s)?(:)?)([\s\S]*)(?=actual result(s)?(:)?)/gi);
@@ -579,21 +577,23 @@ bot.on('messageCreate', (msg) => {
                   var cleanRepostReport = repostReportString.replace(/((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)\.(?:jpg|gif|png))/gim, "");
 
                   if(!!msg.attachments[0]){
-                    attachment = msg.attachments[0].url;
+                    bot.createMessage(channelID, "<@" + userID + "> please use the attach command to attach images instead of embeding images to the submit report").then(delay(config.delayInMS)).then((innerMsg) => {
+                      bot.deleteMessage(channelID, innerMsg.id);
+                    });
                   }
 
                   if(channelID === config.iosChannel){
                     var listID = config.iosCard;
-                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.iosChannel, listID, userID, msg.content);
+                    queueReport(reportStringSubmit, header, cleanRepostReport, channelID, userTag, msg.id, config.iosChannel, listID, userID, msg.content);
                   }else if(channelID === config.androidChannel){
                     var listID = config.androidCard;
-                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.androidChannel, listID, userID, msg.content);
+                    queueReport(reportStringSubmit, header, cleanRepostReport, channelID, userTag, msg.id, config.androidChannel, listID, userID, msg.content);
                   }else if(channelID === config.canaryChannel){
                     var listID = config.canaryCard;
-                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.canaryChannel, listID, userID, msg.content);
+                    queueReport(reportStringSubmit, header, cleanRepostReport, channelID, userTag, msg.id, config.canaryChannel, listID, userID, msg.content);
                   }else if (channelID === config.linuxChannel) {
                     var listID = config.linuxCard;
-                    plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msg.id, config.linuxChannel, listID, userID, msg.content);
+                    queueReport(reportStringSubmit, header, cleanRepostReport, channelID, userTag, msg.id, config.linuxChannel, listID, userID, msg.content);
                   }
 
                 }else{
@@ -839,7 +839,7 @@ bot.on('messageCreate', (msg) => {
     }
 });
 
-function plebReport(reportStringSubmit, header, cleanRepostReport, channelID, attachment, userTag, msgID, os, listID, userID, submitReport){
+function queueReport(reportStringSubmit, header, cleanRepostReport, channelID, userTag, msgID, os, listID, userID, submitReport){
   var lastEntry = Object.keys(dataFile.reports).sort().reverse()[0];
   var uniqueID = dataFile.reports[lastEntry].reportID + 1;
   if(!dataFile.reports.hasOwnProperty(uniqueID)){
@@ -848,7 +848,7 @@ function plebReport(reportStringSubmit, header, cleanRepostReport, channelID, at
       reportMessage: reportStringSubmit,
       cleanRepostReport: cleanRepostReport,
       uncutReport: submitReport,
-      attachment: [attachment],
+      attachment: [],
       channelID: channelID,
       userTag: userTag,
       listID: listID,
@@ -888,7 +888,7 @@ function plebReport(reportStringSubmit, header, cleanRepostReport, channelID, at
     });
     maxTries = 0;
   }else if(maxTries <= 5){
-    plebReport(reportStringSubmit, header, repostReportString, channelID, attachment, userTag, msgID, os);
+    queueReport(reportStringSubmit, header, repostReportString, channelID, userTag, msgID, os);
     maxTries + 1;
   }else{
     bot.createMessage(channelID, "Something went wrong, please try again");
@@ -1125,37 +1125,16 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
   t.post('/1/cards/', newCard, creationSuccess);
 }
 
-function editTrelloCard(cardID, attachment, channelID, report, userID, userTag, msgID, editReportString, editMsgID){
+function editTrelloCard(cardID, channelID, report, userID, userTag, msgID, editReportString, editMsgID){
   var cardUpdated = function(error, data){
-    if(!!attachment){
-      var attachmentAdded = function(attachmentAddedErr, dataAttachment){
-        if(!!attachmentAddedErr){
-          console.log(attachmentAddedErr);
-        }
-        bot.editMessage(channelID, editMsgID, editReportString);
-        bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.").then(delay(config.delayInMS)).then((msg_id) => {
-          bot.deleteMessage(msg_id.channel.id, msg_id.id);
-          bot.deleteMessage(channelID, msgID);
-        }).catch((err) => {
-          console.log("#52 " + err);
-        });
-        bot.createMessage(config.modLogChannel, "**" + userTag + "** edited this report `" + data.name + "` <" + data.shortUrl + ">");
-      }
-      var addAttachment = {
-        url: attachment,
-        name: userTag
-      }
-      t.post('/1/cards/' + data.id + '/attachments', addAttachment, attachmentAdded);
-    }else{
-      bot.editMessage(channelID, editMsgID, editReportString);
-      bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.").then(delay(config.delayInMS)).then((msg_id) => {
-        bot.deleteMessage(msg_id.channel.id, msg_id.id);
-        bot.deleteMessage(channelID, msgID);
-      }).catch((err) => {
-        console.log("#53 " + err);
-      });
-      bot.createMessage(config.modLogChannel, "**" + userTag + "** edited this report `"  + data.name + "` <" + data.shortUrl + ">");
-    }
+    bot.editMessage(channelID, editMsgID, editReportString);
+    bot.createMessage(channelID, userID + ", the Bug Report at <" + data.shortUrl + "> has been successfully updated.").then(delay(config.delayInMS)).then((msg_id) => {
+      bot.deleteMessage(msg_id.channel.id, msg_id.id);
+      bot.deleteMessage(channelID, msgID);
+    }).catch((err) => {
+      console.log("#53 " + err);
+    });
+    bot.createMessage(config.modLogChannel, "**" + userTag + "** edited this report `"  + data.name + "` <" + data.shortUrl + ">");
   }
   var updateCard = {
     value: report
