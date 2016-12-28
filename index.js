@@ -335,21 +335,28 @@ bot.on('messageCreate', (msg) => {
                         var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
                         var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
                       }else if(!!systemClient && systemClient.length === 2){
-
-                        var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
-                        var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-
-                        if(systemClient[0] === "client version"){
-                          var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
-                          var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                          var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/gi);
-                          var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                        }else{
-                          var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
-                          var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                          var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
-                          var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                        }
+                          if(systemClient[0] === "client version"){
+                              
+                            var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                            var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                            var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                            var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                            var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
+                            var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                          }else if(systemClient[0] === "system setting"){
+                              
+                            var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                            var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                            var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                            var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                            var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/i);
+                            var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                          }
                         var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
                         var repostCombinedSections = section4Clean + "\n**System settings:**" + section5Clean + "\n**Client version:**" + section6Clean;
                       }else{
@@ -517,18 +524,26 @@ bot.on('messageCreate', (msg) => {
                   var combinedSections = section4Clean + "\n####Client version:\n" + section5Clean;
                   var repostCombinedSections = section4Clean + "\n**Client version:**" + section5Clean;
                 }else if(!!systemClient && systemClient.length === 2){
-                  var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
-                  var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
-
                   if(systemClient[0] === "client version"){
-                    var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/gi);
-                    var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var section6 = report.match(/(system setting)([\s\S]*)/gi);
-                    var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                  }else{
-                    var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/gi);
+                              
+                     var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
+                     var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                             
+                     var section5 = report.match(/(client version(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                     var section5Clean = section5[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                     var section6 = report.match(/(system setting(s)?(:)?)([\s\S]*)/i);
+                     var section6Clean = section6[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                   }else if(systemClient[0] === "system setting"){
+                              
+                    var section4 = report.match(/(actual result(s)?(:)?)([\s\S]*)(?=system setting(s)?(:)?)/i);
+                    var section4Clean = section4[0].replace(/(actual result(s)?(:)?)([\s\S]*)/gi, '$4');
+                              
+                    var section5 = report.match(/(system setting(s)?(:)?)([\s\S]*)(?=client version(s)?(:)?)/i);
                     var section5Clean = section5[0].replace(/(system setting(s)?(:)?)([\s\S]*)/gi, '$4');
-                    var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/gi);
+                              
+                    var section6 = report.match(/(client version(s)?(:)?)([\s\S]*)/i);
                     var section6Clean = section6[0].replace(/(client version(s)?(:)?)([\s\S]*)/gi, '$4');
                   }
                   var combinedSections = section4Clean + "\n####System settings:\n" + section5Clean + "\n####Client version:\n" + section6Clean;
