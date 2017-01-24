@@ -672,7 +672,7 @@ bot.on('messageCreate', (msg) => {
                     if(!!err){
                       console.log("#24 " + err);
                     }
-                    if(info.approvedBy === 2){ //Reprot is approved and sent to Trello
+                    if(info.approvedBy === 3){ //Report is approved and sent to Trello
                       var listID = info.listID,
                           header = info.header,
                           reportStringSubmit = info.reportMessage,
