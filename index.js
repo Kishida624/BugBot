@@ -27,7 +27,7 @@ function delay(delayMS) {
 var maxTries = 0;
 
 bot.on('guildMemberUpdate', (guild, member, oldMember) => {
-  if(oldMember.roles.indexOf(config.hunterRole) <= -1 && member.roles.indexOf(config.hunterRole) > -1){
+  if(!!oldMember && oldMember.roles.indexOf(config.hunterRole) <= -1 && member.roles.indexOf(config.hunterRole) > -1){
     bot.createMessage(config.bugHunterChannel, 'Welcome <@' + member.user.id + '> to the Bug Hunters™!');
   }
 });
@@ -41,10 +41,15 @@ bot.on('messageCreate', (msg) => {
     var userTag = msg.author.username + "#" + msg.author.discriminator;
     var userID = msg.author.id;
 
+    if(!!msg.member.roles) {
+      var roles = msg.member.roles;
+    }else {
+      var roles = [];
+    }
+    
       switch (command.toLowerCase()) {
         case "!android":
           var android = config.androidAlphaRole;
-          var roles = msg.member.roles;
           var index = roles.indexOf(android);
           if(index === -1){
             roles.push(android);
@@ -76,7 +81,6 @@ bot.on('messageCreate', (msg) => {
         break;
         case "!ios":
           var ios = config.iosTestflightRole;
-          var roles = msg.member.roles;
           var index = roles.indexOf(ios);
           if(index === -1){
             roles.push(ios);
