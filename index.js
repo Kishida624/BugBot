@@ -226,6 +226,8 @@ bot.on('messageCreate', (msg) => {
                     return foundObj.author.id === config.botID && foundObj.content.indexOf(trelloURL) > -1;
                   });
                   bot.editMessage(config.bugApprovalChannel, infoFind.id, infoFind.content + "\n" + attachment);
+                }).catch((err) => {
+                  console.log("#Extra One\n" + err);
                 });
                 var newAttachment = JSON.stringify(dataFile, null, 2);
                 fs.writeFile("./dataFile.json", newAttachment, function(err){
@@ -400,6 +402,8 @@ bot.on('messageCreate', (msg) => {
                           var fixedEditMessage = cleanEditReport + '\n<' + trelloLinkInMsg[1] + '>\n\n**Reproducibility:**' + returnedChatMsg[1];
 
                           editTrelloCard(trelloURL, channelID, reportString, '<@' + userID + '>', userTag, msg.id, fixedEditMessage, dataFinder.id);
+                        }).catch((err) => {
+                          console.log("#Extra Two\n" + err);
                         });
                       }else{
                         bot.createMessage(channelID, "<@" + userID + "> Please format the reproduction steps correctly ` - step one - step two - step three (etc)`").then(delay(config.delayInMS)).then((innerMsg) => {
@@ -461,6 +465,8 @@ bot.on('messageCreate', (msg) => {
                     }else{
                       updateTrelloCardTitle(trelloURL, channelID, newTitle, '<@' + userID + '>', userTag, msg.id, null, null);
                     }
+                  }).catch((err) => {
+                     console.log("#Extra Three\n" + err);
                   });
                 }else{
                   bot.createMessage(channelID, "<@" + userID + ">, please include **one** pipe `|`").then(delay(config.delayInMS)).then((innerMsg) => {
