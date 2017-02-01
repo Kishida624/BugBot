@@ -1102,19 +1102,7 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
     });
     bot.createMessage(config.modLogChannel, "<#" + whereFrom + ">: **" + userTag + "** submitted this report `" + header + "` <" + data.shortUrl + ">");
 
-
-    var guild = bot.guilds.find(guild => guild.id === config.DTserverID);
-    var userInfo = guild.members.get(loggedUserID);
-    if(userInfo.roles.indexOf(config.hunterRole) === -1){
-      var reporterUserID = dataFile.reports[uniqueID].userID;
-      //bot.addGuildMemberRole(config.DTserverID, reporterUserID, config.hunterRole);
-      bot.createMessage(config.modLogChannel, "<@110813477156720640> " + userTag + " needs a rank");  // Ping dabbit for rank
-      bot.getDMChannel(loggedUserID).then(DMInfo => {
-        bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + data.shortUrl + ">");
-      }).catch((err) => {
-        console.log("#50 " + err);
-      });
-    }
+    checkUserInfo(loggedUserID, userTag, whereFrom, data.shortUrl, uniqueID);
 
     dataFile.reports[uniqueID].trelloURL = data.shortUrl;
     var addTrelloURL = JSON.stringify(dataFile, null, 2);
@@ -1133,6 +1121,30 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
     pos: 'top'
   };
   t.post('/1/cards/', newCard, creationSuccess);
+}
+
+var reTestUserInfo = 0;
+
+function checkUserInfo(loggedUserID, userTag, whereFrom, shortUrl, uniqueID) {
+  var guild = bot.guilds.find(guild => guild.id === config.DTserverID);
+  var userInfo = guild.members.get(loggedUserID);
+    
+    if(!!userInfo && userInfo.roles.indexOf(config.hunterRole) === -1) {
+      var reporterUserID = dataFile.reports[uniqueID].userID;
+      bot.createMessage(config.modLogChannel, "<@110813477156720640> " + userTag + " needs a rank");  // Ping dabbit for rank
+      bot.getDMChannel(loggedUserID).then(DMInfo => {
+        bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + shortUrl + ">");
+      }).catch((err) => {
+        console.log("#50 " + err);
+      });
+      reTestUserInfo = 0;
+    } else if(!userInfo && reTestUserInfo <== 5) {
+      checkUserInfo(loggesUserID, userTag, whereFrom, shortUrl);
+      reTestUserInfo++;
+    } else {
+      bot.createMessage(config.modLogChannel, "<@84815422746005504> Couldn't fetch user info on userTag, user might need a new role!");
+      reTestUserInfo = 0;
+    }
 }
 
 function editTrelloCard(cardID, channelID, report, userID, userTag, msgID, editReportString, editMsgID){
