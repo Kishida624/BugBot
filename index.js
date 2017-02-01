@@ -1138,7 +1138,7 @@ function checkUserInfo(loggedUserID, userTag, whereFrom, shortUrl, uniqueID) {
         console.log("#50 " + err);
       });
       reTestUserInfo = 0;
-    } else if(!userInfo && reTestUserInfo <== 5) {
+    } else if(!userInfo && reTestUserInfo <= 5) {
       checkUserInfo(loggesUserID, userTag, whereFrom, shortUrl);
       reTestUserInfo++;
     } else {
