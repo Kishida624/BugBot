@@ -14,6 +14,7 @@ var config = {
   devRole: '197042389569765376',                  //dev role
   hunterRole: '197042209038663680',               //bug hunter role
   adminRole: '197042322939052032',                //admin role
+  linuxTesterRole: '278229255169638410',          //linux role
   androidAlphaRole: '234838349800538112',         //android alpha role
   iosTestflightRole: '234838392464998402',        //ios testflight role
   trelloModRole: '197400761104203776',            //trello mod role
@@ -21,6 +22,7 @@ var config = {
   iosCard: '57fd4af58042f56c271d46b3',            //ios user report card
   androidCard: '57f2a30d861fa9b5816c9717',        //android user report card
   canaryCard: '5771677fda45a436c5b8d255',         //canary user report card
+  linuxCard: '5846f9f1c7b3c505ea4a56be',          //linux user report card
 
   botID: '240545475118235648',                    //bot's user ID
   DTserverID: '197038439483310086',               //Discord Testers srver ID
