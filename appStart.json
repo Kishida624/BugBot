@@ -1,0 +1,11 @@
+{
+  "uid": "bugbot",
+  "append": true,
+  "watch": true,
+  "script": "index.js",
+  "sourceDir": "./",
+  "logFile": "./logs/bblog.log",
+  "errFile": "./logs/errFile.log",
+  "wodkingDir": "./",
+  "path": "./"
+}
