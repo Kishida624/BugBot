@@ -14,7 +14,9 @@ bot.on("error", err => {
 });
 
 bot.on("ready", () => {
-    console.log('Ready!');
+  bot.createMessage(config.modLogChannel, "<@110813477156720640>, I am online and ready to rumble!");
+  bot.createMessage(config.modLogChannel, "I am online and ready to rumble!");
+  console.log('Bug Bot ready!\n--------');
 });
 
 function delay(delayMS) {
@@ -713,7 +715,9 @@ bot.on('messageCreate', (msg) => {
             }).catch(console.error);
           });
           bot.getDMChannel(info.userID).then(DMInfo => {
-            bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```");
+            bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```").catch(() => {
+              bot.createMessage(config.modLogChannel, "❗ Can not DM **" + userTag + "**. Report **#" + messageSplit[0] + "** denied.");
+            });
           }).catch((error) => {
             console.log("ddeny | getDMChannel\n" + error);
           });
@@ -848,7 +852,7 @@ bot.on('messageCreate', (msg) => {
                       console.log("#25 " + err);
                     });
 
-                    bot.deleteMessage(config.bugApprovalChannel, loggedMsgID);
+                    bot.deleteMessage(config.bugApprovalChannel, loggedMsgID).catch(() => {});
 
 
                     info.status = "approved";
@@ -914,6 +918,8 @@ bot.on('messageCreate', (msg) => {
               var newDNUserCount = JSON.stringify(dataFile, null, 2);
               fs.writeFile('./dataFile.json', newDNUserCount, function(err){
                 if(info.deniedBy === 3){ // Report is denied and reporter is DMd a message
+
+
                   info.status = "denied";
                   var newStatus = JSON.stringify(dataFile, null, 2);
                   fs.writeFile("./dataFile.json", newStatus, function(err){
@@ -929,11 +935,15 @@ bot.on('messageCreate', (msg) => {
                   });
                   var userInfo = msg.member.guild.members.get(info.userID);
                   bot.getDMChannel(info.userID).then(DMInfo => {
-                    bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```");
+                    bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + info.header + "` was denied because:\n- `" + info.denialReason.join('`\n- `') + "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n" + info.cleanRepostReport + "```").catch(() => {
+                      bot.createMessage(config.modLogChannel, "❗ Can not DM **" + userTag + "**. Report **#" + messageSplit[0] + "** denied.");
+                    });
                   }).catch((err) => {
                     console.log("#32 " + err);
                   });
                   bot.createMessage(config.modLogChannel, "**" + userTag + "** denied user report **#" + messageSplit[0] + "** `" + info.header + "` | `" + contentMessage[2] + "`");
+
+
                 }else{
                   bot.createMessage(channelID, "<@" + userID + "> you've successfully denied this report.").then(delay(config.delayInMS)).then(innerMsg => {
                     bot.deleteMessage(channelID, innerMsg.id).catch(() => {});
@@ -941,6 +951,7 @@ bot.on('messageCreate', (msg) => {
                   }).catch((err) => {
                     console.log("#33 " + err);
                   });
+
                   bot.getMessages(config.bugApprovalChannel).then(data => {
                     var infoFind = data.find(function(foundObj){
                       return foundObj.author.id === config.botID && foundObj.content.indexOf(messageSplit[0]) > -1;
@@ -963,6 +974,8 @@ bot.on('messageCreate', (msg) => {
                 console.log("#34 " + err);
               });
             }
+
+
           }else{
             bot.createMessage(channelID, "<@" + userID + "> please include a reason for denying the report.").then(delay(config.delayInMS)).then(innerMsg => {
               bot.deleteMessage(channelID, innerMsg.id).catch(() => {});
@@ -991,6 +1004,16 @@ bot.on('messageCreate', (msg) => {
     }
   }
 
+  if(command.toLowerCase() === "!restart"){
+    var dev = msg.member.roles.indexOf(config.devRole);
+    var admin = msg.member.roles.indexOf(config.adminRole);
+    var mod = msg.member.roles.indexOf(config.trelloModRole);
+
+    if(dev > -1 || admin > -1 || mod > -1) {
+      bot.deleteMessage(channelID, msgID);
+      process.exit();
+    }
+  }
 
   if(command.toLowerCase() === "!bug") {
     var dev = msg.member.roles.indexOf(config.devRole);
@@ -1001,15 +1024,16 @@ bot.on('messageCreate', (msg) => {
       var uniqueID = messageSplit.join(' ');
       if(!!uniqueID) {
         let info = dataFile.reports[uniqueID];
-        let shortDesc = info.header;
         let os = info.os;
         let loggedUserTag = info.userTag;
         let cleanRepostReport = info.cleanRepostReport;
         let shortURL = info.trelloURL;
 
         bot.getDMChannel(userID).then(DMInfo => {
-          bot.createMessage(DMInfo.id, "---------------------------------------------\nReported by " + loggedUserTag + cleanRepostReport + "\n<" + shortURL + ">\n\n**Reproducibility:**\n").then(delay(config.delayInMS)).then(() => {
+          bot.createMessage(DMInfo.id, "---------------------------------------------\nReported by " + loggedUserTag + cleanRepostReport + "\n<#" + os + ">\n\n**Reproducibility:**\n" + uniqueID).then(delay(config.delayInMS)).then(() => {
             bot.deleteMessage(channelID, msgID).catch(() => {});
+          }).catch(() => {
+            bot.createMessage(config.modLogChannel, "❗ <@" + userID + "> can't send you bug report **#" + messageSplit[0] + "**. Do you have your DMs turned off?");
           });
         }).catch((err) => {
           console.log("!bug\n" + err);
@@ -1269,7 +1293,7 @@ function sendToTrello(listID, header, report, channelID, whereFrom, userTag, rep
     if(!!creationSuccessErr){
       console.log(creationSuccessErr);
     }
-
+    console.log(data);
     bot.createMessage(channelID, "---------------------------------------------\nReported by " + userTag + repostReportString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**\n").then(delay(config.delayInMS)).then((innerMsg) => {
       if(dataFile.reports[uniqueID].attachment.length !== 0 && !!dataFile.reports[uniqueID].attachment[0]){
         queueAttachment(uniqueID, innerMsg.id, channelID, data.id);
@@ -1310,7 +1334,9 @@ function checkUserInfo(loggedUserID, userTag, whereFrom, shortUrl, uniqueID) {
       var reporterUserID = dataFile.reports[uniqueID].userID;
       bot.createMessage(config.modLogChannel, "<@110813477156720640> " + userTag + " needs a rank");  // Ping dabbit for rank
       bot.getDMChannel(loggedUserID).then(DMInfo => {
-        bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + shortUrl + ">");
+        bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + whereFrom + "> <" + shortUrl + ">").catch(() => {
+          bot.createMessage(config.modLogChannel, "❗ Can not DM **" + userTag + "**. Report **#" + uniqueID + "** approved. <" + shortUrl + ">");
+        });
       }).catch((err) => {
         console.log("#50 " + err);
       });
