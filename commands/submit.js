@@ -34,10 +34,10 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
       } else if(channelID === config.channels.linuxChannel) {
         whichOS = "linux";
       } else if(channelID === config.channels.iosChannel) {
-        whichOS = "iOS";
+        whichOS = "ios";
       }
 
-      db.get("SELECT " + whichOS + " FROM users WHERE userid = " + userID, function(error, dbReplySI) {
+      db.get("SELECT " + whichOS + " FROM users WHERE userid = '" + userID + "'", function(error, dbReplySI) {
         if(!!dbReplySI) {
           //Grab system settings for x user from database
           if(channelID === config.channels.canaryChannel) {
@@ -54,6 +54,9 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
               resolve(sysSettings);
             }
           } else {
+            if(!dbReplySI[whichOS]) {
+              reject("please add your system settings with `!sysinfo <flag> <info>` or manually add it to the report with `System Settings: info`");
+            }
             let sysSettings = " system settings: " + dbReplySI[whichOS];
             resolve(sysSettings);
           }
@@ -106,12 +109,11 @@ let submitCommand = {
           let allSections = sections(reportCapLinks + extraSystemSettings);
 
           let stepsToRepro = allSections["steps to reproduce"];
-          stepsToRepro = stepsToRepro.replace(/(-)\s/i, '\n$&');
+          stepsToRepro = stepsToRepro.replace(/(-)\s/gi, '\n$&');
           let expectedResult = allSections["expected result"];
           let actualResult = allSections["actual result"];
           let clientSetting = allSections["client setting"];
           let sysSettings = allSections["system setting"];
-
           //let checkSys = sysSettings.match(/(-l|-m|-w|-a|-i)/i);
 
           //if(!!checkSys) {
@@ -119,23 +121,11 @@ let submitCommand = {
           //}
           let queueReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
 
-          queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header);
+          queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks + extraSystemSettings, queueReportString, header);
         }).catch((errorMessage)=>{
-          // boReply shit goes here
           utils.botReply(bot, userID, channelID, errorMessage, command, msgID, true);
         });
 
-/*
-
-let matchThis = report.match(/(-w|-m)$/i);
-        if(!matchThis) {
-          reject("please add your system info with `!sysinfo <flag> <info>` or manually add it to the report with `System Settings: info`");
-        } else if(matchThis[1] === "-w") {
-          whichOS = "windows";
-        } else {
-          whichOS = "macOS";
-        }
-        */
         break;
       case "!sumbit":
         utils.botReply(bot, userID, channelID, "did you mean !submit? If so, I took the liberty to fix your command for you! Just copy paste this: `!submit " + joinedMessage + "`", command, msg.id, true);

@@ -1,36 +1,74 @@
 "use strict";
 const config = require("../config");
-let trelloUtils = require("../src/trelloUtils");
-let utils = require("../src/utils");
+const trelloUtils = require("../src/trelloUtils");
+const utils = require("../src/utils");
+const customConfig = require('../configEdit');
+const attachUtils = require('../src/attachUtils');
 
 //Only one image link attachment per command
 //Android can embed several images at once
 let attach = {
   pattern: /!attach/i,
-  execute: function(bot, channelID, userTag, userID, command, msg, trello) {
-    /*
+  execute: function(bot, channelID, userTag, userID, command, msg, trello, db) {
     let msgSplit = msg.content.split(' ');
     msgSplit.shift();
     let joinedMsg = msgSplit.join(' ');
 
-    var regexMsg = joinedMsg.match(/(?:(<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(\/|\>)?(?:[\w-\d]*)?(\/|\>|\/>)?\s*\|\s*([\s\S]*)/i);
+    let regexMsg = joinedMsg.match(/(?:(?:<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(?:\/|\>)?(?:[\w-\d]*)?(?:\/|\>|\/>)?\s*\|?\s*([\s\S]*)/i);
+    if(!regexMsg || !regexMsg[1]) {
+      utils.botReply(bot, userID, channelID, "please include a report key or trello url, and a image", command, msg.id, false);
+      return;
+    }
 
-    t.get("/1/cards/" + regexMsg[2], {}, function(errorURL, urlData) {
-      if(!!urlData && !!urlData.id && urlData.closed === false) {
-        if(!!msg.attachments[0]) {
+    let key = regexMsg[1];
+    let attachment;
+    let removeMsg = false;
 
-        } else if() {
-
-        } else {
-          utils.botReply(bot, userID, channelID, "Please include a valid image", command, msg.id);
-        }
-      } else if() {
-
-      } else {
-        utils.botReply(bot, userID, channelID, "Please include a valid trello link or queue ID", command, msg.id);
+    if(!!regexMsg[2]) {
+      attachment = regexMsg[2];
+      let checkLink = attachment.match(/\bhttps?:\/\/\S+(?:png|jpg|jpeg|gif)\b/i);
+      if(!checkLink) {
+        utils.botReply(bot, userID, channelID, "please include a valid image", command, msg.id, false);
         return;
       }
-    });*/
+      removeMsg = true;
+    } else if (!!msg.attachments[0]) {
+      attachment = msg.attachments[0].url;
+      removeMsg = false;
+    } else {
+      utils.botReply(bot, userID, channelID, "please include a image", command, msg.id, false);
+      return;
+    }
+
+    trello.get("/1/cards/" + key, {}, function(errorURL, urlData) {
+      if(!!urlData && !!urlData.id) {
+        attachUtils(bot, channelID, userTag, userID, command, msg, trello, key, attachment, removeMsg, urlData.name);
+        utils.botReply(bot, userID, channelID, "your attachment has been added.", command, msg.id, true);
+      } else {
+        db.get("SELECT reportMsgID, header FROM reports WHERE id = " + key, function(error, report) {
+          if(!report){
+            utils.botReply(bot, userID, channelID, "please include a report key or trello url", command, msg.id, false);
+            return;
+          }
+
+          bot.getMessage(config.channels.queueChannel, report.reportMsgID).then((msgContent) => {
+            let splitMsg = msgContent.content.split("Report ID: **" + key + "**");
+            let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n:paperclip: **" + userTag + "**: " + attachment + splitMsg[1];
+            db.run("INSERT INTO reportAttachments (id, userID, userTag, attachment) VALUES (" + key + ", '" + userID + "', '" + userTag + "', '" + attachment + "')", function() {
+              bot.editMessage(config.channels.queueChannel, report.reportMsgID, newMsg);
+              utils.botReply(bot, userID, channelID, "your attachment has been added.", command, msg.id, true);
+              bot.createMessage(config.channels.modLogChannel, ":paperclip: **" + userTag + "**: `" + report.header + "` **#" + key + "**");
+            });
+          }).catch(error => {console.log("Attach DB GetMSG\n" + error);});
+        });
+      }
+
+      if(removeMsg === true) {
+        setTimeout(function() {
+          bot.deleteMessage(channelID, msg.id);
+        }, customConfig.delayInS * 1000);
+      }
+    });
   },
   roles: [
     config.roles.adminRole,

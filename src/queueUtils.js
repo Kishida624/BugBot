@@ -5,23 +5,22 @@
 
 const config = require("../config");
 const customConfig = require('../configEdit');
-let utils = require("./utils");
-let tutils = require("./trelloUtils");
+const utils = require("./utils");
+const tutils = require("./trelloUtils");
 
 function deniedReport(bot, msg, db, key, reportInfo) {
-  db.run("UPDATE reports SET reportStatus = closed WHERE id = " + key);
-  db.all("SELECT reason WHERE id = " + key, function(error, DBreasons) {
+  db.run("UPDATE reports SET reportStatus = 'closed' WHERE id = " + key);
+  db.all("SELECT info, userTag FROM reportQueueInfo WHERE id = " + key + " AND stance = 'deny'", function(error, DBReportInfo) {
 
-    let reasonArray = DBreasons.map(function(allReasons){
-      return allReasons.reasons;
+    let DBReportInfoArray = DBReportInfo.map(function(allInfo){
+      return allInfo.userTag + " | " + allInfo.info;
     });
 
     bot.deleteMessage(config.channels.queueChannel, reportInfo.reportMsgID).then(() => {
-      bot.createMessage(config.channels.queueChannel, "`" + reportInfo.header + "` was denied because:\n- `" + reasonArray.join("`\n- `") + "`").then((dndRsn) => {
+      bot.createMessage(config.channels.queueChannel, "`" + reportInfo.header + "` was denied because:\n▫\n- `" + DBReportInfoArray.join("`\n- `") + "`").then(utils.delay(customConfig.minuteDelay)).then((dndRsn) => {
         bot.deleteMessage(config.channels.queueChannel, dndRsn.id).catch(() => {});
-        let userInfo = msg.member.guild.members.get(info.userID);
-        bot.getDMChannel().then((DMInfo) => {
-          bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + reportInfo.header + "` was denied because:\n- `" + reasonArray.join('`\n- `') +
+        bot.getDMChannel(reportInfo.userID).then((DMInfo) => {
+          bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + reportInfo.header + "` was denied because:\n- `" + DBReportInfoArray.join('`\n- `') +
           "`\n\nYou should try adding as much information as you can when you resubmit it. Here are some helpful tips:\n- Does your bug only happen on a specific version of the operating system?\n- Does your bug only happen on a specific device?\n- Try to be as specific as possible. Generalities like \"it glitches\" aren't helpful and lead to confusion.\n- Try to keep each repro step to a single action.\n\nThank you though for the report and we look forward to your next one! :thumbsup:\n\nBelow you'll find your original submit message:\n```\n!submit " +
           reportInfo.header + " | " + reportInfo.reportString + "```").catch(() => {
             bot.createMessage(config.channels.modLogChannel, "⚠ Can not DM **" + userTag + "**. Report **#" + key + "** denied.");
@@ -32,16 +31,14 @@ function deniedReport(bot, msg, db, key, reportInfo) {
   });
 }
 
-let queueUtils = {
-  queueReport: function(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header) {
+  function queueReport (bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header) {
     let reportID;
     db.serialize(function() {
       db.get("SELECT id FROM reports ORDER BY id DESC LIMIT 1", function(err, dbInfo) {
-        console.log(dbInfo);
-        if(!dbInfo) {
-          reportID = 1000;
-        } else {
+        if(!!dbInfo) {
           reportID = dbInfo.id + 1;
+        } else {
+          reportID = 1000;
         }
 
         let cardID;
@@ -56,98 +53,124 @@ let queueUtils = {
         }
 
         bot.createMessage(config.channels.queueChannel, "───────────────────────\n<#" + channelID + "> **" + userTag + "** Reported:\n" + queueReportString + "\n\nThe report above needs to be approved.\nReport ID: **" + reportID + "**\n").then((qMsg) => {
+          let queueMsgID = qMsg.id;
           db.run("INSERT INTO reports(id, header, reportString, userID, userTag, cardID, reportStatus, canRepro, cantRepro, reportMsgID, timestamp) VALUES (" +
-          reportID + ", '" +
-          header + "', '" +
-          reportCapLinks + "', " +
-          userID + ", '" +
-          userTag + "', '" +
-          cardID + "', 'queue', " +
-          0 + ", " +
-          0 + ", " +
-          qMsg.id + ", datetime())");
+          reportID + ", '" + // ID of report
+          header + "', '" + //Short description
+          reportCapLinks + "', '" + //Full report with links capped. Needs to run through getSections
+          userID + "', '" + //user ID of reporter
+          userTag + "', '" + //user Tag if reporter
+          cardID + "', 'queue', " + //which trello card it belongs to if approved & status of the report
+          0 + ", " + //Number of can repro's
+          0 + ", '" + //Number of can't repro's
+          queueMsgID + "', datetime())"); //message ID of report in Queue, later changed to ID in main chat. And time the report was reported (for statistical purposes)
 
-          utils.botReply(bot, userID, channelID, ", your bug has been added to the approval queue. You will be notified when the status of your report updates.", null, msg.id, false);
-          bot.createMessage(config.channels.modLogChannel, "📝 **" + userTag + "** submitted `" + header + "` in <#" + channelID + ">"); //log to bot-log
+          utils.botReply(bot, userID, channelID, "your bug has been added to the approval queue. You will be notified when the status of your report updates.", null, msg.id, false);
+          bot.createMessage(config.channels.modLogChannel, ":pencil: **" + userTag + "** submitted `" + header + "` in <#" + channelID + ">"); //log to bot-log
         });
       });
     });
-  },
+  }
 
-  addAD: function(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport, reportInfo, editMsgCont) {
+  function addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport, reportInfo, editMsgCont, trello) {
     switch (command.toLowerCase()) {
       case "!approve":
         if(!!checkQueueReport) { //Update reportQueueInfo (User has already given their input and wants to change it)
-          let cantRepro = reportInfo.cantRepro--;
-          let canRepro = reportInfo.canRepro++;
-          db.run("UPDATE reportQueueInfo SET reason = " + ADcontent + " WHERE id = " + key, function() {
+          let cantRepro;
+          let canRepro;
+          db.run("UPDATE reportQueueInfo SET info = " + ADcontent + ", stance = 'approve' WHERE id = " + key + " AND userID = '" + userID + "' AND stance = 'deny' OR stance = 'approve'", function() {
+            if(checkQueueReport.stance === "deny"){
+              cantRepro = reportInfo.canRepro + 1;
+              canRepro = reportInfo.cantRepro - 1;
+            } else {
+              cantRepro = reportInfo.cantRepro;
+              canRepro = reportInfo.canRepro;
+            }
             db.run("UPDATE reports SET cantRepro = " + cantRepro + ", canRepro = " + canRepro + " WHERE id = " + key, function() {
-              if(canRepro >= customConfig.approveAttempts) {
+              if(canRepro >= customConfig.approveAttempts) { // approve report
                 tutils.addReportTrello(bot, key, db, trello);
               } else {
                 if(!!editMsgCont) {
                   let splitMsg = editMsgCont.content.split("Report ID: **" + key + "**");
-                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n✅ **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
-                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).then(() => {
-                  });
+                  let split = splitMsg[1];
+
+                  let regex = "(\\<\\:greenTick\\:" + config.emotes.greenTick + "\\>|\\<\\:redTick\\:" + config.emotes.redTick + "\\>)\\s(\\*\\*" + userTag + "\\*\\*):?\\s(.*)";
+                  let newRegex = new RegExp(regex, "gi");
+
+                  let newRepro = "<:greenTick:" + config.emotes.greenTick + "> **" + userTag + "**: `" + ADcontent + "`";
+                  let replace = split.replace(newRegex, newRepro);
+                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**" +  replace;
+                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit approve update\n" + err);});
                 }
               }
-              utils.botReply(bot, userID, channelID, ", you've successfully approved report **#" + key + "**", command, msg.id);
-              bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** approves: **#" + key + "** `" + reportInfo.header + "` | `" + ADcontent + "`"); //log to bot-log
+              utils.botReply(bot, userID, channelID, "you've successfully changed your stance on report **#" + key + "**", command, msg.id);
+              bot.createMessage(config.channels.modLogChannel, ":thumbsup: **" + userTag + "** approved: **#" + key + "** `" + reportInfo.header + "` | `" + ADcontent + "`"); //log to bot-log
             });
           });
         } else { //new reportQueueInfo entries. Add XP here
-          let canRepro = reportInfo.canRepro++;
-          db.run("INSERT INTO reportQueueInfo (id, userID, userTag, reason) VALUES (" + key + ", " + userID + ", '" + userTag + "', '" + ADcontent + "')", function() {
+          let canRepro = reportInfo.canRepro + 1;
+          db.run("INSERT INTO reportQueueInfo (id, userID, userTag, info, stance) VALUES (" + key + ", '" + userID + "', '" + userTag + "', '" + ADcontent + "', 'approve')", function() {
             db.run("UPDATE reports SET canRepro = " + canRepro + " WHERE id = " + key, function() {
-              if(canRepro >= customConfig.approveAttempts) {
+              if(canRepro >= customConfig.approveAttempts) { // approve report
                 tutils.addReportTrello(bot, key, db, trello);
               } else {
                 if(!!editMsgCont) {
                   let splitMsg = editMsgCont.content.split("Report ID: **" + key + "**");
-                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n✅ **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
-                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).then(() => {
-                  });
+                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n<:greenTick:" + config.emotes.greenTick + "> **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
+                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit approve new\n" + err);});
                 }
               }
               utils.botReply(bot, userID, channelID, ", you've successfully approved report **#" + key + "**", command, msg.id);
-              bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** approved: **#" + key + "** `" + reportInfo.header + "` | `" + ADcontent + "`"); //log to bot-log
+              bot.createMessage(config.channels.modLogChannel, ":thumbsup: **" + userTag + "** approved: **#" + key + "** `" + reportInfo.header + "` | `" + ADcontent + "`"); //log to bot-log
             });
           });
         }
       break;
       case "!deny":
         if(!!checkQueueReport) { //Update reportQueueInfo (User has already given their input and wants to change it)
-          let cantRepro = reportInfo.cantRepro++;
-          let canRepro = reportInfo.canRepro--;
-          db.run("UPDATE reportQueueInfo SET reason = " + ADcontent + " WHERE id = " + key, function() {
+          let cantRepro;
+          let canRepro;
+          db.run("UPDATE reportQueueInfo SET info = " + ADcontent + ", stance = 'deny' WHERE id = " + key + " AND userID = '" + userID + "' AND stance = 'deny' OR stance = 'approve'", function() {
+            if(checkQueueReport.stance === "approve"){
+              cantRepro = reportInfo.cantRepro + 1;
+              canRepro = reportInfo.canRepro - 1;
+            } else {
+              cantRepro = reportInfo.cantRepro;
+              canRepro = reportInfo.canRepro;
+            }
             db.run("UPDATE reports SET cantRepro = " + cantRepro + ", canRepro = " + canRepro + " WHERE id = " + key, function() {
-              if(cantRepro >= customConfig.denyAttempts) {
+              if(cantRepro >= customConfig.denyAttempts) { // deny report
                 deniedReport(bot, msg, db, key, reportInfo);
               } else {
                 if(!!editMsgCont) {
                   let splitMsg = editMsgCont.content.split("Report ID: **" + key + "**");
-                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n❌ **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
-                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).then(() => {
-                  });
+                  let split = splitMsg[1];
+
+                  let regex = "(\\<\\:greenTick\\:" + config.emotes.greenTick + "\\>|\\<\\:redTick\\:" + config.emotes.redTick + "\\>)\\s(\\*\\*" + userTag + "\\*\\*):?\\s(.*)";
+                  let newRegex = new RegExp(regex, "gi");
+
+                  let newRepro = "<:redTick:" + config.emotes.redTick + "> **" + userTag + "**: `" + ADcontent + "`";
+                  let replace = split.replace(newRegex, newRepro);
+                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**" + replace;
+
+                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit Deny update\n" + err);});
                 }
               }
-              utils.botReply(bot, userID, channelID, ", you've successfully denied report **#" + key + "**", command, msg.id);
+              utils.botReply(bot, userID, channelID, ", you've successfully changed your stance on report **#" + key + "**", command, msg.id);
               bot.createMessage(config.channels.modLogChannel, ":thumbsdown: **" + userTag + "** denied: **#" + key + "** `" + reportInfo.header + "` because: `" + ADcontent + "`"); //log to bot-log
             });
           });
         } else { //new reportQueueInfo entries. Add XP here
-          let cantRepro = reportInfo.cantRepro++;
-          db.run("INSERT INTO reportQueueInfo (id, userID, userTag, reason) VALUES (" + key + ", " + userID + ", '" + userTag + "', '" + ADcontent + "')", function() {
+          let cantRepro = reportInfo.cantRepro + 1;
+          db.run("INSERT INTO reportQueueInfo (id, userID, userTag, info, stance) VALUES (" + key + ", " + userID + ", '" + userTag + "', '" + ADcontent + "', 'deny')", function() {
             db.run("UPDATE reports SET cantRepro = " + cantRepro + " WHERE id = " + key, function() {
-              if(cantRepro >= customConfig.denyAttempts) {
+              if(cantRepro >= customConfig.denyAttempts) { // deny report
                 deniedReport(bot, msg, db, key, reportInfo);
               } else {
                 if(!!editMsgCont) {
                   let splitMsg = editMsgCont.content.split("Report ID: **" + key + "**");
-                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n❌ **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
-                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).then(() => {
-                  });
+                  let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n<:redTick:" + config.emotes.redTick + "> **" + userTag + "**: `" + ADcontent + "`" + splitMsg[1];
+                  bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit Deny new\n" + err);});
                 }
               }
               utils.botReply(bot, userID, channelID, ", you've successfully denied report **#" + key + "**", command, msg.id);
@@ -157,11 +180,24 @@ let queueUtils = {
         }
       break;
     }
-  },
-  editQueueReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, report) {
-
-    let requiredFields = ["steps to reproduce", "expected result", "actual result", "client setting", "system setting"];
   }
-}
 
-module.exports = queueUtils;
+ function editQueueReport(bot, trello, db, userTag, userID, key, editSection, newContent, msg, channelID, oldReportString) {
+    if(editSection === "header" || editSection === "short description") {
+      db.run("UPDATE reports SET header = '" + newContent + "' WHERE id = " + key);
+    } else {
+      let requiredFields = ["steps to reproduce", "expected result", "actual result", "client setting", "system setting"];
+      let thisIndex = requiredFields.indexOf(editSection);
+      let regex = "(" + editSection + ")s?:\\s*(.*)(?:" + requiredFields[thisIndex + 1] + ")";
+      let newRegex = new RegExp(regex, "i");
+      let newReport = oldReportString.replace(regex, newContent);
+      db.run("UPDATE reports SET reportString = '" + newReport + "' WHERE id = " + key);
+    }
+  }
+
+module.exports = {
+  queueReport: queueReport,
+  addAD: addAD,
+  editQueueReport: editQueueReport,
+  deniedReport: deniedReport
+}

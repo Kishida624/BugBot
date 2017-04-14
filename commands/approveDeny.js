@@ -2,6 +2,25 @@
 const config = require("../config");
 const customConfig = require('../configEdit');
 let utils = require("../src/utils");
+let qutils = require('../src/queueUtils');
+
+function addApproval (bot, channelID, userTag, userID, command, msg, db, key, ADcontent, reportInfo, trello) {
+  db.all("SELECT stance FROM reportQueueInfo WHERE id = " + key + " AND userID = '" + userID + "' AND (stance = 'approve' OR stance = 'deny')" , function(error, checkQueueReport) {
+    bot.getMessage(config.channels.queueChannel, reportInfo.reportMsgID).then((msgContent) => {
+
+      if(!!msgContent && !!checkQueueReport) {
+        qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport[0], reportInfo, msgContent, trello);
+      } else if(!!msgContent && !checkQueueReport) {
+        qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, null, reportInfo, msgContent, trello);
+      } else if(!msgContent && !!checkQueueReport) {
+        qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport[0], reportInfo, null, trello);
+      } else {
+        qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, null, reportInfo, null, trello);
+      }
+
+    }).catch((error) => {console.log("L14 appDeny\n" + error)});
+  });
+}
 
 let approveDeny = {
   pattern: /!approve|!deny/i,
@@ -11,11 +30,11 @@ let approveDeny = {
     let recievedMessage = messageSplit.join(' ');
     let contentMessage = recievedMessage.match(/(\d*)\s*\|\s*([\s\S]*)/i);
     if(!contentMessage) {
-      utils.botReply(bot, userID, channelID, "please format your input correctly. `" + command + " | system info`. See <#240548137633185792> for full syntax")
+      utils.botReply(bot, userID, channelID, "please format your input correctly. `" + command + " | system info`. See <#240548137633185792> for full syntax", command, msg.id, false);
+      return;
     }
     let key = contentMessage[1];
-    db.get("SELECT header, reportStatus, canRepro, cantRepro, queueMsgID, header, reportString, userID FROM reports WHERE id = " + key, function(error, reportInfo) {
-
+    db.get("SELECT header, reportStatus, canRepro, cantRepro, reportMsgID, header, reportString, userID FROM reports WHERE id = " + key, function(error, reportInfo) {
       if(!reportInfo) { // check if report exists
         utils.botReply(bot, userID, channelID, "I can't find that report ID. Make sure you use a valid report ID.", command, msg.id, false);
         return;
@@ -29,46 +48,39 @@ let approveDeny = {
         return;
       }
       let whichClient = contentMessage[2].match(/(-l|-m|-w|-a|-i)/i);
-
-      if(whichClient[1] === "-c") {
-        whichClient = "canary";
-      } else if(whichClient[1] === "-i") {
-        whichClient = "iOS";
-      } else if(whichClient[1] === "-l") {
-        whichClient = "linux";
-      } else if(whichClient[1] === "-m") {
-        whichClient = "macOS";
-      } else if(whichClient[1] === "-a") {
-        whichClient = "android";
-      }
-
       let ADcontent;
       //Check if ADcontent exists or not, reply "missing reason/user settings" if it's missing
-      if(!!contentMessage[2]) {
-        utils.reply(bot, userID, channelID, "you're missing a reason or system settings. Refer to #Bot-Help for more info", command, msg.id, false);
+      if(!contentMessage[2]) {
+        utils.botReply(bot, userID, channelID, "you're missing a reason or system settings. Refer to #Bot-Help for more info", command, msg.id, false);
         return;
-      } else if(!!content) {
-        db.get("SELECT " + whichClient[1] + " FROM users WHERE id = " + userID, function(error, usrSys) {
+      } else if(!!whichClient) {
+        let system;
+        if(whichClient[1] === "-w") {
+          system = "windows";
+        } else if(whichClient[1] === "-i") {
+          system = "ios";
+        } else if(whichClient[1] === "-l") {
+          system = "linux";
+        } else if(whichClient[1] === "-m") {
+          system = "macOS";
+        } else if(whichClient[1] === "-a") {
+          system = "android";
+        }
+        db.get("SELECT " + system + " FROM users WHERE userid = '" + userID + "'", function(error, usrSys) {
           if(!!usrSys){
-            ADcontent = content.replace(/(-l|-m|-w|-a|-i)$/i, usrSys.content[1]);
+            //ADcontent = whichClient.replace(/(-l|-m|-w|-a|-i)/i, usrSys[system]);
+            let info = contentMessage[2];
+            ADcontent = info.replace(/(-l|-m|-w|-a|-i)/i, usrSys[system]);
+            addApproval (bot, channelID, userTag, userID, command, msg, db, key, ADcontent, reportInfo, trello);
           } else {
-            utils.botReply(bot, userID, channelID, "doesn't seem like you have that client in our system. You can add it with `!addsys " + whichClient[1] + " new System`", command, msg.id, false);
+            utils.botReply(bot, userID, channelID, "doesn't seem like you have that client in our database. You can add it with `!addsys " + whichClient[1] + " | system info`", command, msg.id, false);
             return;
           }
         });
       } else {
-        ADcontent = content.join(' ');
+        ADcontent = contentMessage[2];
+        addApproval (bot, channelID, userTag, userID, command, msg, db, key, ADcontent, reportInfo, trello);
       }
-
-      db.get("SELECT userID, FROM reportQueueInfo WHERE id = " + key, function(error, checkQueueReport) {
-        bot.getMessage(config.queueChannel, reportInfo.queueMsgID).then((msgContent) => {
-          if(!!msgContent) {
-            qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport, reportInfo, msgContent, trello);
-          } else {
-            qutils.addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent, checkQueueReport, reportInfo, null, trello);
-          }
-        });
-      });
     });
   },
   roles: [

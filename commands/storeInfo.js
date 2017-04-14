@@ -3,7 +3,7 @@ const config = require("../config");
 let utils = require("../src/utils");
 
 let storeSysInfo = {
-  pattern: /!systeminfo|!sysinfo|!addsys/i,
+  pattern: /!storeinfo|!systeminfo|!sysinfo|!addsys/i,
   execute: function(bot, channelID, userTag, userID, command, msg, trello, db) {
     let messageSplit = msg.content.split(' ');
     messageSplit.shift();
@@ -24,7 +24,7 @@ let storeSysInfo = {
     if(contentInfo[1] === "-w") {
       whichOS = "windows";
     } else if(contentInfo[1] === "-i") {
-      whichOS = "iOS";
+      whichOS = "ios";
     } else if(contentInfo[1] === "-l") {
       whichOS = "linux";
     } else if(contentInfo[1] === "-m") {
@@ -36,21 +36,19 @@ let storeSysInfo = {
       return;
     }
 
-    db.get("SELECT " + whichOS + " FROM users WHERE userid = " + userID, function(error, dbRowReply){
+    db.get("SELECT " + whichOS + " FROM users WHERE userid = '" + userID + "'", function(error, dbRowReply){
       if(!!error){
         console.log(error);
         //bot.createMessage(); //Log to error log channel (bot-log? Include pastebin?)
       }
       if(!!dbRowReply){
-        console.log(dbRowReply);
         //Edit existing database entry
-        db.run("UPDATE users SET " + whichOS + " = '" + systemInfo + "' WHERE userid = " + userID);
+        db.run("UPDATE users SET " + whichOS + " = '" + systemInfo + "' WHERE userid = '" + userID + "'");
         utils.botReply(bot, userID, channelID, "your new " + whichOS + " settings have been saved", command, msg.id);
         //bot.createMessage(config.channel.modLogChannel, ""); //user changed their --- info
       }else if(!dbRowReply){
-        console.log(dbRowReply);
         //Create new database entry
-        db.run("INSERT INTO users (userid, " + whichOS + ") VALUES(" + userID + ", '" + systemInfo + "')");
+        db.run("INSERT INTO users (userid, " + whichOS + ") VALUES('" + userID + "', '" + systemInfo + "')");
         utils.botReply(bot, userID, channelID, "your new " + whichOS + " settings have been saved", command, msg.id);
         //bot.createMessage(config.channel.modLogChannel, ""); //user added their --- info
       }

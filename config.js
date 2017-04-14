@@ -1,6 +1,6 @@
 var config = {
   botID: '283010618376847360', //240545475118235648
-  DTserverID: '190228401917919233', //197038439483310086
+  DTserverID: '285838309878530048', //197038439483310086
 
   channels: {
     iosChannel: '285840931197026308', //202491590390841344
@@ -30,6 +30,11 @@ var config = {
     androidCard: '57f3ba51f80fce646d44085f', // 57f2a30d861fa9b5816c9717
     canaryCard: '57f7ac925b7707a242d3e815', //5771677fda45a436c5b8d255
     linuxCard: '57f7ac925b7707a242d3e815' //5846f9f1c7b3c505ea4a56be
+  },
+
+  emotes: {
+    greenTick: '301528515361243136',
+    redTick: '301528514832760833'
   }
 }
 module.exports = config;

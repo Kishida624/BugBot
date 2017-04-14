@@ -1,15 +1,16 @@
 "use strict";
 const config = require("../config");
-const customConfig = require('../configEdit');
-let utils = require("./utils");
-let sections = require('./getSections');
+const utils = require("./utils");
+const sections = require('./getSections');
+const reproUtils = require('./reproUtils');
+const attachUtils = require('./attachUtils');
 //edit command
 //attach command
 
 function addReportTrello(bot, key, db, trello) { // add report to trello
-  db.get('SELECT header, reportString, userID, userTag, cardID FROM id = ' + key, function(error, report) {
+  db.get('SELECT header, reportString, userID, userTag, cardID, reportMsgID FROM reports WHERE id = ' + key, function(error, report) {
 
-    let allSections = sections.getSections(report.reportString);
+    let allSections = sections(report.reportString);
 
     let stepsToRepro = allSections["steps to reproduce"];
     stepsToRepro = stepsToRepro.replace(/(-)\s/i, '\n$&');
@@ -22,6 +23,7 @@ function addReportTrello(bot, key, db, trello) { // add report to trello
     const reportChatString = "\n**Short description:** " + report.header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
 
     let success = function(successError, data) {
+      bot.deleteMessage(config.channels.queueChannel, report.reportMsgID).catch(() => {});
       let postChannelID;
       switch (report.cardID) {
         case config.cards.iosCard:
@@ -37,25 +39,23 @@ function addReportTrello(bot, key, db, trello) { // add report to trello
           postChannelID = config.channels.linuxChannel;
           break;
       }
-      bot.createMessage(postChannelID, "───────────────────────\nReported By **" + report.userTag + "**" + reportChatString + "\n<" + data.shortUrl + ">\n\n**Reproducibility:**\n").then((msgInfo) => {
+      bot.createMessage(postChannelID, "───────────────────────\nReported By **" + report.userTag + "**" + reportChatString + "\n<" + data.shortUrl + "> - **#" + key + "**\n\n**Reproducibility:**\n").then((msgInfo) => {
         // change reportStatus, trelloURL & queueMsgID
         // attach all attachments to the trello post
         let trelloURL = data.shortUrl.match(/(?:(?:<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(?:\/|\>)?(?:[\w-\d]*)?(?:\/|\>|\/>)?/i);
-        db.run('UPDATE ' + key + ' (reportStatus, trelloURL, queueMsgID) SET VALUES (\'trello\', \'' + trelloURL + '\', ' + msgInfo.id + ')');
-        bot.createMessage(config.channels.modLogChannel, "📨 <#" + postChannelID + "> **" + report.userTag + "** - `" + header + "` <" + data.shortUrl + ">\n" + key); //log to bot-log
-
-        db.all('SELECT userID, userTag, attachment FROM reportAttachments WHERE id =' + key, function(error, attachmentData) {
-          if(attachmentData.length !== 0){
-            queueAttachment(bot, key, db, trello, attachmentData, trelloURL);
-          }
-        });
+        db.run("UPDATE reports SET reportStatus = 'trello', trelloURL = '" + trelloURL[1] + "', reportMsgID = '" + msgInfo.id + "' WHERE id = " + key);
+        bot.createMessage(config.channels.modLogChannel, ":incoming_envelope: <#" + postChannelID + "> **" + report.userTag + "** - `" + report.header + "` <" + data.shortUrl + ">\n" + key); //log to bot-log
 
         setTimeout(function() {
-          getUserInfo(report.userID, report.userTag, postChannelID, data.shortUrl, key);
+          db.each('SELECT userID, userTag, attachment FROM reportAttachments WHERE id = ' + key, function(error, attachmentData) {
+            if(!!attachmentData && attachmentData.length !== 0){
+              attachUtils(bot, null, attachmentData.userTag, attachmentData.userID, "!attach", null, trello, trelloURL[1], attachmentData.attachment, false, report.header);
+            }
+          });
+          getUserInfo(report.userID, report.userTag, postChannelID, data.shortUrl, key, bot);
+          reproUtils.queueRepro(bot, trello, db, postChannelID, trelloURL[1], key);
         }, 2000);
-      });
-
-      //add approvals as repro
+      }).catch(err => {console.log(err);});
     }
 
     let newReport = {
@@ -69,8 +69,8 @@ function addReportTrello(bot, key, db, trello) { // add report to trello
 }
 
 let loopGetUserInfo = 0;
-function getUserInfo(userID, userTag, postChannelID, shortUrl, key) {
-  let guild = bot.guilds.find(guild => guild.id === config.DTserverID);
+function getUserInfo(userID, userTag, postChannelID, shortUrl, key, bot) {
+  let guild = bot.guilds.get(config.DTserverID);
   let userInfo = guild.members.get(userID);
   if(!!guild) {
     if(!!userInfo) {
@@ -94,41 +94,12 @@ function getUserInfo(userID, userTag, postChannelID, shortUrl, key) {
       getUserInfo(userID, userTag, postChannelID, shortUrl, key);
     }, 2000);
   } else {
-    bot.createMessage(config.channels.modLogChannel, "<@84815422746005504> Couldn't fetch user info on " + userTag + ", user might need a new role!");
+    bot.createMessage(config.channels.modLogChannel, "⚠ Couldn't fetch user info on " + userTag + ", user might need a new role!");
     loopGetUserInfo = 0;
   }
 }
 
-function queueAttachment() {
-
-}
-
-function userRepro(bot, userID, userTag, db, trello, reportKey, channelID, reproduction, emoji, reproCnt, editMsg, msgID, editMsgID) {
-
-  var sentRepro = function(error, info) {
-    if(!!error) {
-      utils.botReply(bot, userID, channelID, "something went wrong, please try again.", command, msgID, false);
-    }else{
-      if(!!userID){ //userID = null when repro comes from Queue report
-        utils.botReply(bot, userID, channelID, "your note has been added to the ticket.", command, msgID, false);
-
-        if(!!editMsgID && !!editMsg) { //check that message exists before modifying it
-          bot.editMessage(channelID, editMsgID, editMsg);
-        }
-        bot.createMessage(config.modLogChannel, emoji + " **" + userTag + "**: " + reproduction + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
-      }else{ // add repro from queue report
-        bot.editMessage(channelID, editMsgID, editMsg);
-      }
-    }
-  }
-
-  var reproInfo = {
-    text: reproduction + "\n" + reproCnt + "\n\n"+ userTag
-  }
-  t.post("/1/cards/" + trelloURL + "/actions/comments", reproInfo, sentRepro);
-}
-
-function editTrelloReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, urlData) {
+function editTrelloReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, urlData, msgID, command) {
   let checkArray = ["header", "short description"];
   if(checkArray.indexOf(editSection.toLowerCase()) > 1) {
     //edit card title (name)
@@ -139,15 +110,15 @@ function editTrelloReport(bot, trello, userTag, userID, key, editSection, newCon
     }
     var updateCard = {
       value: newContent
-    }
-    t.put('/1/cards/' + key + '/name', updateCard, cardUpdated);
+    };
+    trello.put('/1/cards/' + key + '/name', updateCard, cardUpdated);
 
   } else {
     //edit desc
     let regex = "(" + editSection + ")s?:\s*(?:\\n)*\s*(.*?)(?=(?:\s*\\n)?#)";
     let newRegex = new RegExp(regex, "i");
-
-    let editTrelloString = urlData.desc.replace(newRegex, utils.toTitleCase(editSection) + ":\n " + newContent);
+    let trelloDesc = urlData.desc;
+    let editTrelloString = trelloDesc.replace(newRegex, utils.toTitleCase(editSection) + ":\n " + newContent);
 
     var cardUpdated = function(error, data){
       utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msgID, false);
@@ -156,14 +127,13 @@ function editTrelloReport(bot, trello, userTag, userID, key, editSection, newCon
 
     var updateCard = {
       value: editTrelloString
-    }
+    };
 
-    t.put('/1/cards/' + key + '/desc', updateCard, cardUpdated);
+    trello.put('/1/cards/' + key + '/desc', updateCard, cardUpdated);
   }
 }
 
 module.exports = {
   addReportTrello: addReportTrello,
-  userRepro: userRepro,
   editTrelloReport: editTrelloReport
-}
+};

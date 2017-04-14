@@ -2,7 +2,7 @@
   "uid": "bugbot",
   "append": true,
   "watch": true,
-  "script": "index.js",
+  "script": "bugbot.js",
   "sourceDir": "./",
   "logFile": "./logs/bblog.log",
   "errFile": "./logs/errFile.log",
