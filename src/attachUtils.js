@@ -12,11 +12,11 @@ function attachUtils (bot, channelID, userTag, userID, command, msg, trello, tre
     if(removeMsg === true) {
       bot.getMessages(channelID).then((messages) => {
         let gotMsg = messages.map(function(msgs) {
-          return info.author.id === config.botID && info.content.indexOf("https://trello.com/c/" + trelloURL) > -1 && info.content.indexOf("Reproducibility:") > -1;
+          return msgs.author.id === config.botID && msgs.content.indexOf("https://trello.com/c/" + trelloURL) > -1 && msgs.content.indexOf("Reproducibility:") > -1;
         });
 
         if(!!gotMsg) {
-          let splitMsg = msgContent.split('**Reproducibility:**');
+          let splitMsg = gotMsg.content.split('**Reproducibility:**');
           let newMsg = splitMsg[0] + "**Reproducibility:**\n:paperclip: **" + userTag + "**" + attachment + splitMsg[1];
           bot.editMessage(channelID, gotMsg.id, newMsg);
         }

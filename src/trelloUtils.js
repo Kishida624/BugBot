@@ -73,16 +73,15 @@ function getUserInfo(userID, userTag, postChannelID, shortUrl, key, bot) {
   let guild = bot.guilds.get(config.DTserverID);
   let userInfo = guild.members.get(userID);
   if(!!guild) {
-    if(!!userInfo) {
+    if(!userInfo) {
       return;
     }
     if(userInfo.roles.indexOf(config.roles.hunterRole) === -1){
       //bot.createMessage(config.modLogChannel, "<@110813477156720640> " + userTag + " needs a rank");  // Ping dabbit for rank
     }
-
-    bot.getDMChannel(userID).then(DMInfo => {
+    bot.getDMChannel(userID).then((DMInfo) => {
       bot.createMessage(DMInfo.id, "The bug you reported has been approved! Thanks for your report! You can find your bug in <#" + postChannelID + "> <" + shortUrl + ">").catch(() => {
-        bot.createMessage(config.channels.modLogChannel, "⚠ Can not DM **" + userTag + "**. Report **#" + key + "** approved. <" + shortUrl + ">");
+        bot.createMessage(config.channels.modLogChannel, ":warning: Can not DM **" + userTag + "**. Report **#" + key + "** approved. <" + shortUrl + ">");
       });
     }).catch((err) => {
       console.log("trelloUtils gerUserInfo DM\n" + err);
@@ -94,7 +93,7 @@ function getUserInfo(userID, userTag, postChannelID, shortUrl, key, bot) {
       getUserInfo(userID, userTag, postChannelID, shortUrl, key);
     }, 2000);
   } else {
-    bot.createMessage(config.channels.modLogChannel, "⚠ Couldn't fetch user info on " + userTag + ", user might need a new role!");
+    bot.createMessage(config.channels.modLogChannel, ":warning: Couldn't fetch user info on " + userTag + ", user might need a new role!");
     loopGetUserInfo = 0;
   }
 }

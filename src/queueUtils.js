@@ -52,7 +52,7 @@ function deniedReport(bot, msg, db, key, reportInfo) {
           cardID = config.cards.linuxCard;
         }
 
-        bot.createMessage(config.channels.queueChannel, "───────────────────────\n<#" + channelID + "> **" + userTag + "** Reported:\n" + queueReportString + "\n\nThe report above needs to be approved.\nReport ID: **" + reportID + "**\n").then((qMsg) => {
+        bot.createMessage(config.channels.queueChannel, "─────────────────────\n<#" + channelID + "> **" + userTag + "** Reported:\n" + queueReportString + "\n\nThe report above needs to be approved.\nReport ID: **" + reportID + "**\n").then((qMsg) => {
           let queueMsgID = qMsg.id;
           db.run("INSERT INTO reports(id, header, reportString, userID, userTag, cardID, reportStatus, canRepro, cantRepro, reportMsgID, timestamp) VALUES (" +
           reportID + ", '" + // ID of report
