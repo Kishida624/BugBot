@@ -22,112 +22,123 @@ let edit = {
     let key = matchString[1];
     let editSection = matchString[2];
     let newContent = matchString[3];
-    var matchFormat = editSection.match(/\b(header|steps to reproduce|expected result|actual result|client settings|system settings)(s)?(:)?/i);
+    var matchFormat = editSection.match(/\b(header|title|short description|body|str|steps to reproduce|expected|expected result|actual|actual result|cs|client|client setting|ss|system|system setting)(s)?(:)?/i);
     if(!splitters || splitters.length !== 2){
       utils.botReply(bot, userID, channelID, "please include two splitters, like this: `!edit <key/url> | <what part you want to change> | <the new content>`", command, msg.id, false);
       return;
     }
     if(!matchFormat){
-      utils.botReply(bot, userID, channelID, "please include what you want to change. `Header`, `Steps to reproduce`, `Expected result`, `Actual result`, `Client settings` or `System settings`", command, msg.id);
+      utils.botReply(bot, userID, channelID, "please include the section you want to change. Look in #Bot-Help for a full list of sections.", command, msg.id);
       return;
     }
 
-    if(matchFormat === "steps to reproduce") {
-      newContent = newContent.replace(/(-)\s/i, '\n$&');
+    let cleanNewContent;
+    if(!!newContent.match(/(\*|\`)/i)){
+      console.log("test");
+      cleanNewContent = newContent.replace(/(\*|\`)/gi, "/$&");
+    } else {
+      console.log("potato");
+      cleanNewContent = newContent;
+      console.log(cleanNewContent);
     }
 
-    db.get("SELECT reportString, reportMsgID, reportStatus, cardID FROM reports WHERE trelloURL = '" + key + "' OR id = " + key, function(error, report) {
-      trello.get("/1/cards/" + key, {}, function(errorTrello, urlData) {
-        if(!report && !urlData && !!urlData.id) { //Check if the key is correct
+    switch (editSection) {
+      case "header":
+      case "title":
+        editSection = "short description";
+      break;
+      case "body":
+      case "str":
+      case "steps to reproduce":
+        cleanNewContent = cleanNewContent.replace(/(-)\s/gi, '\n$&');
+        editSection = "steps to reproduce";
+      break;
+      case "expected":
+        editSection = "expected result";
+      break;
+      case "actual":
+        editSection = "actual result";
+      break;
+      case "cs":
+      case "client":
+        editSection = "client setting";
+      break;
+      case "ss":
+      case "system":
+        editSection = "system setting";
+      break;
+    }
 
+    db.get("SELECT reportString, reportMsgID, reportStatus, trelloURL FROM reports WHERE trelloURL = ? OR id = ?", [key, key], function(error, report) {
+      console.log(newContent);
+      console.log(editSection);
+      if(!!report && report.reportStatus === "trello") {
+        key = report.trelloURL;
+      }
+      trello.get("/1/cards/" + key, {}, function(errorTrello, urlData) {
+        if(!report && !urlData && !urlData.id) { //Check if the key is correct
           utils.botReply(bot, userID, channelID, "I can't seem to find the report on Trello or in the Queue, you should double check your key.", command, msg.id, false);
           return;
         } else if(!!urlData && urlData.closed === true) { // check if in trello, but closed
 
           utils.botReply(bot, userID, channelID, "this report has already been closed.", command, msg.id, false);
           return;
-        } else if(!!urlData && !!urlData.id) { //in Trello
-          if(!!report) { //in DB
-            //edit database & trello
-            qUtils.editQueueReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, report.reportString);
-            trelloUtils.editTrelloReport(bot, trello, db, userTag, userID, key, editSection, newContent, msg, channelID, urlData, report.cardID, msg.id, command);
+        }
 
-            bot.getMessage(channelID, report.reportMsgID).then((oldReport) => {
-              if(!!oldReport){
-                let regex = "(" + editSection + ")s?:\s*(?:\*)*\s*(.*?)(?=(?:\s*\n)?\*\*|\\n\\n)";
-                let newRegex = new RegExp(regex, "i");
-
-                let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + newContent);
-                bot.editMessage(channelID, report.reportMsgID, editReport).then(() => {
-                  utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msg.id, false);
-                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + urlData.shortUrl + "> **#" + key + "**");
-                }).catch((error) => {
-                  console.log("Edit | Trello & DB & Msg\n" + error);
-                });
-              }
-            });
-          } else { //legacy report
-            //edit trello
-            //look for msg in chat
-
-            bot.getMessages(channelID).then((data) => {
-              var dataFinder = data.find(function(foundObj) {
-                return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + trelloURL) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
-              });
-              if(!!dataFinder) {
-                let regex = "(" + editSection + ")s?:\s*(?:\*)*\s*(.*?)(?=(?:\s*\n)?\*\*|\\n\\n)";
-                let newRegex = new RegExp(regex, "i");
-
-                let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + newContent);
-                bot.editMessage(channelID, dataFinder.id, editReport).then(() => {
-                  utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msg.id, false);
-                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + urlData.shortUrl + "> **#" + key + "**");
-                }).catch((error) => {
-                  console.log("Edit | Trello & DB & Msg\n" + error);
-                });
-              }
-            });
-            trelloUtils.editTrelloReport(bot, trello, db, userTag, userID, key, editSection, newContent, msg, channelID, urlData, cardID, msg.id, command);
-          }
-        } else if(!!report) { //in DB
-          if(report.reportStatus === "queue") {
-            //edit queue (chat) msg and database
+        if(!!report) {
+          if(report.reportStatus === "queue") { //Report is in queue
+            qUtils.editDBReport(bot, trello, db, userTag, userID, key, editSection, newContent, msg, channelID, report.reportString);
             bot.getMessage(config.channels.queueChannel, report.reportMsgID).then((oldReport) => {
               if(!!oldReport) {
-                if(editSection === "header") {
-                  editSection = "short description";
-                }
-                let regex = "(" + editSection + ")s?:\\s*(?:\\*)*\\s*(.*?)(?=(?:\\s*\\n)?\\*\\*|\\n\\n)";
-                let newRegex = new RegExp(regex, "i");
+                let pattern = "" + editSection + "s?:\\s*(?:\\*)*\\s*([\\s\\S]*?)(?=(?:\\s*\\n)?\\*\\*|\\n\\n)";
+                let newRegex = new RegExp(pattern, "i");
 
-                let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + newContent);
+                let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + cleanNewContent);
                 bot.editMessage(config.channels.queueChannel, report.reportMsgID, editReport).then(() => {
-                  utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msg.id, false);
-                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` ID: **#" + key + "**");
+                  utils.botReply(bot, userID, channelID, " `" + utils.toTitleCase(editSection) + "` has been updated", command, msg.id, false);
+                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` ID: **#" + key + "**");
                 }).catch((error) => {
                   console.log("Edit | msgQueue\n" + error);
                 });
               }
-            });
-            qUtils.editQueueReport(bot, trello, db, userTag, userID, key, editSection, newContent, msg, channelID, report.reportString);
-          } else {
+            }).catch((error) => {console.log("Edit | Queue getMsg\n" + error);});
+          } else if(report.reportStatus === "trello") { //report is in DB and Trello (approved report)
+            trelloUtils.editTrelloReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, urlData, msg.id, command);
+            bot.getMessage(channelID, report.reportMsgID).then((oldReport) => {
+              if(!!oldReport){
+                let pattern = "" + editSection + "s?:\\s*(?:\\*)*\\s*([\\s\\S]*?)(?=(?:\\s*\\n)?\\*\\*|\\n\\n)";
+                let newRegex = new RegExp(pattern, "i");
+
+                let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + cleanNewContent);
+                bot.editMessage(channelID, report.reportMsgID, editReport);
+              }
+            }).catch((error) => {console.log("Edit | Trello & DB getMsg\n" + error);});
+          } else if(report.reportStatus === "closed") { //report has been denied
             utils.botReply(bot, userID, channelID, "this report has already been closed.", command, msg.id, false);
-            return;
           }
+        } else { // legacy report - Not in DB
+          trelloUtils.editTrelloReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, urlData, msg.id, command);
+          bot.getMessages(channelID).then((data) => {
+            var dataFinder = data.find(function(foundObj) {
+              return foundObj.author.id === config.botID && foundObj.content.indexOf('https://trello.com/c/' + key) > -1 && foundObj.content.indexOf('Reproducibility:') > -1;
+            });
+            if(!!dataFinder) {
+              let pattern = "" + editSection + "s?:\\s*(?:\\*)*\\s*([\\s\\S]*?)(?=(?:\\s*\\n)?\\*\\*|\\n\\n)";
+              let newRegex = new RegExp(pattern, "i");
+
+              let editReport = dataFinder.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + cleanNewContent);
+              bot.editMessage(channelID, dataFinder.id, editReport);
+            }
+          }).catch((error) => {console.log("Edit | Legacy getMsg\n" + error);});
         }
       });
     });
-
-    //check if report is in db
-    //if not in database check if it's in trello
-      //if it's in trello, edit trello and check for chat msg
-      //if chat msg, edit that too
-    //if in database check if it's in queue or trello
-      //if in queue, edit queue msg and Database
-      //if in trello, edit chat msg, database and trello
   },
   roles: [
-    config.roles.everybodyRole
+    config.roles.adminRole,
+    config.roles.trelloModRole,
+    config.roles.devRole,
+    config.roles.hunterRole
     ],
   channels: [
     config.channels.iosChannel,

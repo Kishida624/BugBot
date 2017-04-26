@@ -12,14 +12,17 @@ function delay (delayS) {
 
 function botReply (bot, userID, channelID, error, command, msgID, minute) {
   if(command === "!submit") {
-    bot.createMessage(channelID, '<@' + userID + '> ' + error).then(delay(customConfig.delayInS)).then((msgInfo) => {
+    bot.createMessage(channelID, '<@' + userID + '> ' + error).then(delay(customConfig.maxDelay)).then((msgInfo) => {
+      bot.createMessage("294233153554481152", msgInfo.cleanContent);
       bot.deleteMessage(channelID, msgInfo.id).catch(() => {});
+      bot.deleteMessage(channelID, msgID).catch(() => {});
     }).catch((error) => {
       console.log("#utils | botReply submit command\n" + error);
       //bot.createMessage() Log to channel
     });
   } else if(minute === true) {
     bot.createMessage(channelID, '<@' + userID + '> ' + error).then(delay(customConfig.minuteDelay)).then((msgInfo) => {
+      bot.createMessage("294233153554481152", msgInfo.cleanContent);
       bot.deleteMessage(channelID, msgInfo.id).catch(() => {});
       bot.deleteMessage(channelID, msgID).catch(() => {});
     }).catch((error) => {
@@ -27,6 +30,7 @@ function botReply (bot, userID, channelID, error, command, msgID, minute) {
     });
   } else {
     bot.createMessage(channelID, '<@' + userID + '> ' + error).then(delay(customConfig.delayInS)).then((msgInfo) => {
+      bot.createMessage("294233153554481152", msgInfo.cleanContent);
       bot.deleteMessage(channelID, msgInfo.id).catch(() => {});
       bot.deleteMessage(channelID, msgID).catch(() => {});
     }).catch((error) => {

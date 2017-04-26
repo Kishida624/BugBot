@@ -15,7 +15,7 @@ let reproduction = {
         var reproduction = "Can reproduce.";
         var emoji = "\n<:greenTick:" + config.emotes.greenTick + "> ";
 
-        if(!msgContent && !msgContent[1] && !msgContent[2]){
+        if(!msgContent || !msgContent[1] || !msgContent[2]){
           utils.botReply(bot, userID, channelID, "please provide a valid URL, a client version, and make sure the issue is not closed.", command, msg.id);
           return;
         }
@@ -28,7 +28,7 @@ let reproduction = {
         var reproduction = "Can't reproduce.";
         var emoji = "\n<:redTick:" + config.emotes.redTick + "> ";
 
-        if(!msgContent && !msgContent[1] && !msgContent[2]){
+        if(!msgContent || !msgContent[1] || !msgContent[2]){
           utils.botReply(bot, userID, channelID, "please provide a valid URL, a client version, and make sure the issue is not closed.", command, msg.id);
           return;
         }

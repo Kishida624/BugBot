@@ -28,19 +28,20 @@ let modCommands = {
           });
           break;
         case "!getuser":
-          db.all("SELECT * FROM users WHERE userid = " + recievedMessage, function(error, data) {
-            bot.getDMChannel(userID).then((dmChannel) => {
-              bot.createMessage(dmChannel.id, "stuff");
-            }).catch((error) => {console.log(error);})
+          db.all("SELECT * FROM users WHERE userid = ?", [recievedMessage], function(error, data) {
+            //bot.getDMChannel(userID).then((dmChannel) => {
+            //  bot.createMessage(dmChannel.id, data);
+            //}).catch((error) => {console.log(error);})
+            console.log(data);
           });
           break;
         case "!getrepro":
-          db.all("SELECT * FROM reportQueueInfo WHERE id = " + recievedMessage, function(error, data) {
+          db.all("SELECT * FROM reportQueueInfo WHERE id = ?", [recievedMessage], function(error, data) {
             console.log(data);
           });
           break;
         case "!getnumber":
-          db.get("SELECT cantRepro, canRepro, id FROM reports WHERE id = " + recievedMessage, function(error, data) {
+          db.get("SELECT cantRepro, canRepro, id FROM reports WHERE id = ?", [recievedMessage], function(error, data) {
             console.log(data);
           });
           break;

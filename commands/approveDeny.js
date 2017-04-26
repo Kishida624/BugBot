@@ -5,7 +5,7 @@ let utils = require("../src/utils");
 let qutils = require('../src/queueUtils');
 
 function addApproval (bot, channelID, userTag, userID, command, msg, db, key, ADcontent, reportInfo, trello) {
-  db.all("SELECT stance FROM reportQueueInfo WHERE id = " + key + " AND userID = '" + userID + "' AND (stance = 'approve' OR stance = 'deny')" , function(error, checkQueueReport) {
+  db.all("SELECT stance FROM reportQueueInfo WHERE id = ? AND userID = ? AND (stance = 'approve' OR stance = 'deny')", [key, userID] , function(error, checkQueueReport) {
     bot.getMessage(config.channels.queueChannel, reportInfo.reportMsgID).then((msgContent) => {
 
       if(!!msgContent && !!checkQueueReport) {
@@ -34,7 +34,7 @@ let approveDeny = {
       return;
     }
     let key = contentMessage[1];
-    db.get("SELECT header, reportStatus, canRepro, cantRepro, reportMsgID, header, reportString, userID FROM reports WHERE id = " + key, function(error, reportInfo) {
+    db.get("SELECT header, reportStatus, canRepro, cantRepro, reportMsgID, header, reportString, userID FROM reports WHERE id = ?", [key], function(error, reportInfo) {
       if(!reportInfo) { // check if report exists
         utils.botReply(bot, userID, channelID, "I can't find that report ID. Make sure you use a valid report ID.", command, msg.id, false);
         return;
@@ -66,7 +66,7 @@ let approveDeny = {
         } else if(whichClient[1] === "-a") {
           system = "android";
         }
-        db.get("SELECT " + system + " FROM users WHERE userid = '" + userID + "'", function(error, usrSys) {
+        db.get("SELECT " + system + " FROM users WHERE userid = ?", [userID], function(error, usrSys) {
           if(!!usrSys){
             //ADcontent = whichClient.replace(/(-l|-m|-w|-a|-i)/i, usrSys[system]);
             let info = contentMessage[2];

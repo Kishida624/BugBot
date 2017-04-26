@@ -11,11 +11,11 @@ let storeSysInfo = {
 
     let contentInfo = joinedMessage.match(/(-l|-m|-w|-a|-i)\s*\|\s*([\s\S]*)/i);
     if(!contentInfo) {
-      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-log for full list", command, msg.id);
+      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-help for full list", command, msg.id);
       return;
     }
     if(!!contentInfo && !contentInfo[1] && !contentInfo[2]) {
-      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-log for full list", command, msg.id);
+      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-help for full list", command, msg.id);
       return;
     }
     let whichOS;
@@ -32,23 +32,23 @@ let storeSysInfo = {
     } else if(contentInfo[1] === "-a") {
       whichOS = "android";
     } else {
-      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-log for full list", command, msg.id);
+      utils.botReply(bot, userID, channelID, "please include which client and your specs. Like so: `" + command + " -i | 10.0.1`. Check #bot-help for full list", command, msg.id);
       return;
     }
 
-    db.get("SELECT " + whichOS + " FROM users WHERE userid = '" + userID + "'", function(error, dbRowReply){
+    db.get("SELECT " + whichOS + " FROM users WHERE userid = ?", [userID], function(error, dbRowReply){
       if(!!error){
         console.log(error);
         //bot.createMessage(); //Log to error log channel (bot-log? Include pastebin?)
       }
       if(!!dbRowReply){
         //Edit existing database entry
-        db.run("UPDATE users SET " + whichOS + " = '" + systemInfo + "' WHERE userid = '" + userID + "'");
+        db.run("UPDATE users SET " + whichOS + " = ? WHERE userid = ?", [systemInfo, userID]);
         utils.botReply(bot, userID, channelID, "your new " + whichOS + " settings have been saved", command, msg.id);
         //bot.createMessage(config.channel.modLogChannel, ""); //user changed their --- info
       }else if(!dbRowReply){
         //Create new database entry
-        db.run("INSERT INTO users (userid, " + whichOS + ") VALUES('" + userID + "', '" + systemInfo + "')");
+        db.run("INSERT INTO users (userid, " + whichOS + ") VALUES(?, ?)", [userID, systemInfo]);
         utils.botReply(bot, userID, channelID, "your new " + whichOS + " settings have been saved", command, msg.id);
         //bot.createMessage(config.channel.modLogChannel, ""); //user added their --- info
       }

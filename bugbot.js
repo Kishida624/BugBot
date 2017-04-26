@@ -7,6 +7,7 @@ var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('./data/data.sqlite');
 const utils = require("./src/utils");
 const getBug = require('./src/getBug');
+const backup = require('./src/backup');
 
 //Fix admin only commands
 //backup on autorestart or on timer
@@ -24,7 +25,7 @@ let bot = new Eris(customConfig.botToken);
 bot.on('error', err => {
   console.log("BOT ERROR:\n" + err.stack);
 });
-
+let reconnect = false;
 bot.on("ready", () => {
   console.log('───────────────────────\nReady! PID: ' + process.pid);
   db.run("CREATE TABLE IF NOT EXISTS reports (id INTEGER, header TEXT, reportString TEXT, userID TEXT, userTag TEXT, cardID TEXT, reportStatus TEXT, trelloURL TEXT, canRepro INTEGER, cantRepro INTEGER, reportMsgID TEXT, timestamp TEXT)");
@@ -32,6 +33,14 @@ bot.on("ready", () => {
   db.run("CREATE TABLE IF NOT EXISTS reportAttachments (id INTEGER, userID TEXT, userTag TEXT, attachment TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS users (userID TEXT, xp INTEGER, windows TEXT, ios TEXT, android TEXT, macOS TEXT, linux TEXT, reproDailyXP INTEGER, reproDailyTimer TEXT, ADdailyXP INTEGER, ADdailyTimer TEXT, hugDailyNumb INTEGER)");
   bot.createMessage(config.channels.modLogChannel, "I heard there are bugs that needs reporting. I'm online and ready to rumble! " + process.pid);
+
+  if(reconnect === false) {
+    //run loops
+
+    backup(bot);
+
+    reconnect = true;
+  }
 });
 
 commandList.add('addNote'); //Done
@@ -100,6 +109,7 @@ bot.on('messageCreate', (msg) => {
         //check for channel
         if(correctChannelIsBeingUsed(msg.channel, matchingCommand)){
 
+          console.log(command + " " + messageSplit.join(' '));
           matchingCommand.execute(bot, channelID, userTag, userID, command, msg, trello, db);
         } else {
           //Tell the user they're posting the command in the wrong channel?

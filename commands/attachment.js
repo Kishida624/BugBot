@@ -45,7 +45,7 @@ let attach = {
         attachUtils(bot, channelID, userTag, userID, command, msg, trello, key, attachment, removeMsg, urlData.name);
         utils.botReply(bot, userID, channelID, "your attachment has been added.", command, msg.id, true);
       } else {
-        db.get("SELECT trelloURL, reportStatus, reportMsgID, header FROM reports WHERE id = " + key, function(error, report) {
+        db.get("SELECT trelloURL, reportStatus, reportMsgID, header FROM reports WHERE id = ?", [key], function(error, report) {
           if(!report){
             utils.botReply(bot, userID, channelID, "please include a report key or trello url", command, msg.id, false);
             return;
@@ -59,9 +59,8 @@ let attach = {
             utils.botReply(bot, userID, channelID, "your attachment has been added.", command, msg.id, true);
           } else {
             bot.getMessage(config.channels.queueChannel, report.reportMsgID).then((msgContent) => {
-              let splitMsg = msgContent.content.split("Report ID: **" + key + "**");
-              let newMsg = splitMsg[0] + "Report ID: **" + key + "**\n:paperclip: **" + userTag + "**: " + attachment + splitMsg[1];
-              db.run("INSERT INTO reportAttachments (id, userID, userTag, attachment) VALUES (" + key + ", '" + userID + "', '" + userTag + "', '" + attachment + "')", function() {
+              let newMsg = msgContent.content + "\n:paperclip: **" + userTag + "**: " + attachment;
+              db.run("INSERT INTO reportAttachments (id, userID, userTag, attachment) VALUES (?, ?, ?, ?)", [key, userID, userTag, attachment], function() {
                 bot.editMessage(config.channels.queueChannel, report.reportMsgID, newMsg);
                 utils.botReply(bot, userID, channelID, "your attachment has been added.", command, msg.id, true);
                 bot.createMessage(config.channels.modLogChannel, ":paperclip: **" + userTag + "**: `" + report.header + "` **#" + key + "**");

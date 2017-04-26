@@ -11,18 +11,18 @@ function attachUtils (bot, channelID, userTag, userID, command, msg, trello, tre
 
     if(removeMsg === true) {
       bot.getMessages(channelID).then((messages) => {
-        let gotMsg = messages.map(function(msgs) {
+        let gotMsg = messages.find(function(msgs) {
           return msgs.author.id === config.botID && msgs.content.indexOf("https://trello.com/c/" + trelloURL) > -1 && msgs.content.indexOf("Reproducibility:") > -1;
         });
 
         if(!!gotMsg) {
-          let splitMsg = gotMsg.content.split('**Reproducibility:**');
-          let newMsg = splitMsg[0] + "**Reproducibility:**\n:paperclip: **" + userTag + "**" + attachment + splitMsg[1];
+          let newMsg = gotMsg.content + "\n:paperclip: **" + userTag + "** | " + attachment;
+          bot.editMessage(config.channels.queueChannel, report.reportMsgID, newMsg);
           bot.editMessage(channelID, gotMsg.id, newMsg);
         }
         setTimeout(function() {
-          bot.deleteMessage(channelID, msg.id);
-        }, customConfig.delayInS * 1000);
+          bot.deleteMessage(channelID, msg.id).catch(() => {});
+        }, customConfig.delayInS * 800);
       }).catch(error => {console.log("attachUtils getMSG\n" + error);});
     }
     bot.createMessage(config.channels.modLogChannel, ":paperclip: **" + userTag + "**: `" + urlDataName + "` <https://trello.com/c/" + trelloURL + ">");

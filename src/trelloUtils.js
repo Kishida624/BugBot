@@ -8,12 +8,12 @@ const attachUtils = require('./attachUtils');
 //attach command
 
 function addReportTrello(bot, key, db, trello) { // add report to trello
-  db.get('SELECT header, reportString, userID, userTag, cardID, reportMsgID FROM reports WHERE id = ' + key, function(error, report) {
+  db.get('SELECT header, reportString, userID, userTag, cardID, reportMsgID FROM reports WHERE id = ?', [key], function(error, report) {
 
     let allSections = sections(report.reportString);
 
     let stepsToRepro = allSections["steps to reproduce"];
-    stepsToRepro = stepsToRepro.replace(/(-)\s/i, '\n$&');
+    stepsToRepro = stepsToRepro.replace(/(-)\s/gi, '\n$&');
     let expectedResult = allSections["expected result"];
     let actualResult = allSections["actual result"];
     let clientSetting = allSections["client setting"];
@@ -43,11 +43,12 @@ function addReportTrello(bot, key, db, trello) { // add report to trello
         // change reportStatus, trelloURL & queueMsgID
         // attach all attachments to the trello post
         let trelloURL = data.shortUrl.match(/(?:(?:<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(?:\/|\>)?(?:[\w-\d]*)?(?:\/|\>|\/>)?/i);
-        db.run("UPDATE reports SET reportStatus = 'trello', trelloURL = '" + trelloURL[1] + "', reportMsgID = '" + msgInfo.id + "' WHERE id = " + key);
+        let trelloUrlSuffix = trelloURL[1];
+        db.run("UPDATE reports SET reportStatus = 'trello', trelloURL = ?, reportMsgID = ? WHERE id = ?", [trelloUrlSuffix, msgInfo.id, key]);
         bot.createMessage(config.channels.modLogChannel, ":incoming_envelope: <#" + postChannelID + "> **" + report.userTag + "** - `" + report.header + "` <" + data.shortUrl + ">\n" + key); //log to bot-log
 
         setTimeout(function() {
-          db.each('SELECT userID, userTag, attachment FROM reportAttachments WHERE id = ' + key, function(error, attachmentData) {
+          db.each('SELECT userID, userTag, attachment FROM reportAttachments WHERE id = ?', [key], function(error, attachmentData) {
             if(!!attachmentData && attachmentData.length !== 0){
               attachUtils(bot, null, attachmentData.userTag, attachmentData.userID, "!attach", null, trello, trelloURL[1], attachmentData.attachment, false, report.header);
             }
@@ -99,13 +100,13 @@ function getUserInfo(userID, userTag, postChannelID, shortUrl, key, bot) {
 }
 
 function editTrelloReport(bot, trello, userTag, userID, key, editSection, newContent, msg, channelID, urlData, msgID, command) {
-  let checkArray = ["header", "short description"];
+  let checkArray = ["header", "short description", "title"];
   if(checkArray.indexOf(editSection.toLowerCase()) > 1) {
     //edit card title (name)
 
     var cardUpdated = function(error, data){
       utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msgID, false);
-      bot.createMessage(config.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + data.shortUrl + ">");
     }
     var updateCard = {
       value: newContent
@@ -120,8 +121,8 @@ function editTrelloReport(bot, trello, userTag, userID, key, editSection, newCon
     let editTrelloString = trelloDesc.replace(newRegex, utils.toTitleCase(editSection) + ":\n " + newContent);
 
     var cardUpdated = function(error, data){
-      utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msgID, false);
-      bot.createMessage(config.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + data.shortUrl + ">");
+      utils.botReply(bot, userID, channelID, " `" + utils.toTitleCase(editSection) + "` has been updated", command, msgID, false);
+      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` <" + data.shortUrl + ">");
     }
 
     var updateCard = {

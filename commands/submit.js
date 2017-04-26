@@ -37,7 +37,10 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
         whichOS = "ios";
       }
 
-      db.get("SELECT " + whichOS + " FROM users WHERE userid = '" + userID + "'", function(error, dbReplySI) {
+      db.get("SELECT " + whichOS + " FROM users WHERE userid = ?", [userID], function(error, dbReplySI) {
+        if(!!error) {
+          console.log(error);
+        }
         if(!!dbReplySI) {
           //Grab system settings for x user from database
           if(channelID === config.channels.canaryChannel) {
@@ -47,7 +50,7 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
               let os = dbReplySI.windows || dbReplySI.macOS;
 
               if(!os){
-                reject("please add your system settings with `!sysinfo <flag> <info>` or manually add it to the report with `System Settings: info`");
+                reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
               }
 
               let sysSettings = " system settings: " + os;
@@ -55,14 +58,14 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
             }
           } else {
             if(!dbReplySI[whichOS]) {
-              reject("please add your system settings with `!sysinfo <flag> <info>` or manually add it to the report with `System Settings: info`");
+              reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
             }
             let sysSettings = " system settings: " + dbReplySI[whichOS];
             resolve(sysSettings);
           }
         }else if(!dbReplySI) {
           //Tell user to manually add system settings or store it in the bot
-          reject("please add your system settings with `!sysinfo <flag> <info>` or manually add it to the report with `System Settings: info`");
+          reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
         }
       });
     } else {
@@ -73,7 +76,7 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
 }
 
 let submitCommand = {
-  pattern: /!submit|!sumbit/,
+  pattern: /!submit|!sumbit/i,
   execute: function(bot, channelID, userTag, userID, command, msg, trello, db) {
     let msgID = msg.id;
     var messageSplit = msg.content.split(' ');
@@ -94,6 +97,11 @@ let submitCommand = {
           return;
         }
 
+        if(!header) {
+          utils.botReply(bot, userID, channelID, "please include a short description of your problem to use as a title!", command, msg.id, true);
+          return;
+        }
+
         let reportCapLinks = report.replace(/([(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&\/=]*))/gi, "<$1>");
 
         const regPattern = /\b(steps to reproduce|expected result|actual result|client setting|system setting)s?:?/gi;
@@ -104,9 +112,8 @@ let submitCommand = {
           sectionNames.add(matches[1].toLowerCase());
         }
 
-
-        checkSectionsExist(userID, reportCapLinks, channelID, sectionNames, db).then((extraSystemSettings)=>{
-          let allSections = sections(reportCapLinks + extraSystemSettings);
+        checkSectionsExist(userID, reportCapLinks, channelID, sectionNames, db).then((extraSystemSettings) => {
+          let allSections = sections(reportCapLinks + extraSystemSettings, msg, bot);
 
           let stepsToRepro = allSections["steps to reproduce"];
           stepsToRepro = stepsToRepro.replace(/(-)\s/gi, '\n$&');
@@ -114,14 +121,17 @@ let submitCommand = {
           let actualResult = allSections["actual result"];
           let clientSetting = allSections["client setting"];
           let sysSettings = allSections["system setting"];
-          //let checkSys = sysSettings.match(/(-l|-m|-w|-a|-i)/i);
 
-          //if(!!checkSys) {
+          let checkMissing = !stepsToRepro || !expectedResult || !actualResult || !clientSetting || !sysSettings;
 
-          //}
+          if(checkMissing) {
+            utils.botReply(bot, userID, channelID, "remember to fill in all the required fields!", command, msgID, true);
+            return;
+          }
+
           let queueReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
 
-          queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks + extraSystemSettings, queueReportString, header);
+          queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header);
         }).catch((errorMessage)=>{
           utils.botReply(bot, userID, channelID, errorMessage, command, msgID, true);
         });

@@ -13,7 +13,7 @@ function getBug (bot, channelID, userTag, userID, command, msg, trello, db) {
     return;
   }
 
-  db.get("SELECT * FROM reports WHERE id = " + recievedMessage, function(error, reportInfo) {
+  db.get("SELECT * FROM reports WHERE id = ?", [recievedMessage], function(error, reportInfo) {
     let allSections = sections(reportInfo.reportString);
 
     let stepsToRepro = allSections["steps to reproduce"];
@@ -23,7 +23,7 @@ function getBug (bot, channelID, userTag, userID, command, msg, trello, db) {
     let clientSetting = allSections["client setting"];
     let sysSettings = allSections["system setting"];
 
-    db.all("SELECT * FROM reportQueueInfo WHERE id = " + recievedMessage, function(error, reportRepro) {
+    db.all("SELECT * FROM reportQueueInfo WHERE id = ?", [recievedMessage], function(error, reportRepro) {
       let stance;
       let getRepro = reportRepro.map(function(everyRepro) {
         if(everyRepro.stance === "approve") {

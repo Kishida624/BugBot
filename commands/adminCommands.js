@@ -37,7 +37,7 @@ let adminCommands = {
           } else if(whichClient[1] === "-a") {
             system = "android";
           }
-          db.get("SELECT " + system + " FROM users WHERE userid = '" + userID + "'", function(error, usrSys) {
+          db.get("SELECT " + system + " FROM users WHERE userid = ?", [userID], function(error, usrSys) {
             if(!!usrSys){
               ADContent = usrSys[system];
               adminUtils.queueOverride (bot, channelID, userTag, userID, command, msg, trello, db, key, ADContent);
