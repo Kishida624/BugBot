@@ -9,14 +9,6 @@ const utils = require("./src/utils");
 const getBug = require('./src/getBug');
 const backup = require('./src/backup');
 
-//Fix admin only commands
-//backup on autorestart or on timer
-//XP system
-//!alias command for "latest" discord version
-//check replace "latest" in repro/approval/submit to latest Discord ios/win/linux/android
-//escape everything so "usern`ame#9431" doesn't break
-//go through all files and convert emoji to emote `X` to `:x:`
-
 let Trello = require('node-trello');
 var trello = new Trello(customConfig.trelloKey, customConfig.trelloToken);
 
