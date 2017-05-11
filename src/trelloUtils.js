@@ -4,8 +4,6 @@ const utils = require("./utils");
 const sections = require('./getSections');
 const reproUtils = require('./reproUtils');
 const attachUtils = require('./attachUtils');
-//edit command
-//attach command
 
 function addReportTrello(bot, key, db, trello) { // add report to trello
   db.get('SELECT header, reportString, userID, userTag, cardID, reportMsgID FROM reports WHERE id = ?', [key], function(error, report) {
@@ -106,7 +104,7 @@ function editTrelloReport(bot, trello, userTag, userID, key, editSection, newCon
 
     var cardUpdated = function(error, data){
       utils.botReply(bot, userID, channelID, ", `" + utils.toTitleCase(editSection) + "` has been updated to `" + newContent + "`", command, msgID, false);
-      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited `" + utils.toTitleCase(editSection) + "` to `" + newContent + "` <" + data.shortUrl + ">");
     }
     var updateCard = {
       value: newContent
@@ -122,7 +120,7 @@ function editTrelloReport(bot, trello, userTag, userID, key, editSection, newCon
 
     var cardUpdated = function(error, data){
       utils.botReply(bot, userID, channelID, " `" + utils.toTitleCase(editSection) + "` has been updated", command, msgID, false);
-      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` <" + data.shortUrl + ">");
+      bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited `" + utils.toTitleCase(editSection) + "` <" + data.shortUrl + ">");
     }
 
     var updateCard = {

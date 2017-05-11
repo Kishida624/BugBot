@@ -17,7 +17,7 @@ function deniedReport(bot, msg, db, key, reportInfo) {
     });
 
     bot.deleteMessage(config.channels.queueChannel, reportInfo.reportMsgID).then(() => {
-      bot.createMessage(config.channels.queueChannel, "`" + reportInfo.header + "` was denied because:\n- `" + DBReportInfoArray.join("`\n- `") + "`").then(utils.delay(customConfig.minuteDelay)).then((dndRsn) => {
+      bot.createMessage(config.channels.queueChannel, "**#" + key + "** | `" + reportInfo.header + "` was denied because:\n- `" + DBReportInfoArray.join("`\n- `") + "`").then(utils.delay(customConfig.minuteDelay)).then((dndRsn) => {
         bot.deleteMessage(config.channels.queueChannel, dndRsn.id).catch(() => {});
         bot.getDMChannel(reportInfo.userID).then((DMInfo) => {
           bot.createMessage(DMInfo.id, "Hi " + DMInfo.recipient.username + ", unfortunately the bug you reported earlier: `" + reportInfo.header + "` was denied because:\n- `" + DBReportInfoArray.join('`\n- `') +
@@ -54,7 +54,7 @@ function queueReport (bot, userTag, userID, channelID, db, msg, reportCapLinks, 
       } else if(channelID === config.channels.linuxChannel) {
         cardID = config.cards.linuxCard;
       }
-      queueReportString = queueReportString.replace(/(`)/gi, "\\$&");
+      queueReportString = queueReportString.replace(/(`|\~|\_)/gi, "\\$&");
       bot.createMessage(config.channels.queueChannel, "───────────────────\n<#" + channelID + "> **" + userTag + "** Reported:\n" + queueReportString + "\n\nThe report above needs to be approved.\nReport ID: **" + reportID + "**\n").then((qMsg) => {
         let queueMsgID = qMsg.id;
 
@@ -114,7 +114,7 @@ function addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent
                 bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit approve new\n" + err);});
               }
             }
-            utils.botReply(bot, userID, channelID, ", you've successfully approved report **#" + key + "**", command, msg.id);
+            utils.botReply(bot, userID, channelID, "you've successfully approved report **#" + key + "**", command, msg.id);
             bot.createMessage(config.channels.modLogChannel, ":thumbsup: **" + userTag + "** approved: **#" + key + "** `" + reportInfo.header + "` | `" + ADcontent + "`"); //log to bot-log
           });
         });
@@ -150,7 +150,7 @@ function addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent
                 bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit Deny update\n" + err);});
               }
             }
-            utils.botReply(bot, userID, channelID, ", you've successfully changed your stance on report **#" + key + "**", command, msg.id);
+            utils.botReply(bot, userID, channelID, "you've successfully changed your stance on report **#" + key + "**", command, msg.id);
             bot.createMessage(config.channels.modLogChannel, ":thumbsdown: **" + userTag + "** denied: **#" + key + "** `" + reportInfo.header + "` because: `" + ADcontent + "`"); //log to bot-log
           });
         });
@@ -167,7 +167,7 @@ function addAD(bot, channelID, userTag, userID, command, msg, db, key, ADcontent
                 bot.editMessage(config.channels.queueChannel, reportInfo.reportMsgID, newMsg).catch(err => {console.log("edit Deny new\n" + err);});
               }
             }
-            utils.botReply(bot, userID, channelID, ", you've successfully denied report **#" + key + "**", command, msg.id);
+            utils.botReply(bot, userID, channelID, "you've successfully denied report **#" + key + "**", command, msg.id);
             bot.createMessage(config.channels.modLogChannel, ":thumbsdown: **" + userTag + "** denied: **#" + key + "** `" + reportInfo.header + "` because: `" + ADcontent + "`"); //log to bot-log
           });
         });

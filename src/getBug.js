@@ -37,7 +37,7 @@ function getBug (bot, channelID, userTag, userID, command, msg, trello, db) {
       bot.getDMChannel(userID).then((getID) => {
         let trelloURL = "";
         if(!!reportInfo.trelloURL) {
-          trelloURL = "https://trello.com/c/" + reportInfo.trelloURL;
+          trelloURL = "<https://trello.com/c/" + reportInfo.trelloURL + ">";
         }
         let queueReportString = "\n**Short description:** " + reportInfo.header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
         bot.createMessage(getID.id, "───────────────────────\nReported by: <@" + reportInfo.userID + ">\n" + queueReportString + "\n\n - " + getRepro.join('\n - ') + "\n **#" + recievedMessage + "** - " + trelloURL);

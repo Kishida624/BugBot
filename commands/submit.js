@@ -45,12 +45,12 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
           //Grab system settings for x user from database
           if(channelID === config.channels.canaryChannel) {
             if(!!dbReplySI.windows && !!dbReplySI.macOS) {
-              reject("please specify which OS you want to report the bug"); // needs fancy string - bug Dabbit
+              reject("Because you have multiple different OS versions stored, you need to specify which one you're referring to. Just add `-w` for Windows or `-m` for Mac!`"); // needs fancy string - bug Dabbit
             } else {
               let os = dbReplySI.windows || dbReplySI.macOS;
 
               if(!os){
-                reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
+                reject("please add your system settings with `!storeinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
               }
 
               let sysSettings = " system settings: " + os;
@@ -58,14 +58,14 @@ function checkSectionsExist(userID, report, channelID, sectionNames, db) {
             }
           } else {
             if(!dbReplySI[whichOS]) {
-              reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
+              reject("please add your system settings with `!storeinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
             }
             let sysSettings = " system settings: " + dbReplySI[whichOS];
             resolve(sysSettings);
           }
         }else if(!dbReplySI) {
           //Tell user to manually add system settings or store it in the bot
-          reject("please add your system settings with `!sysinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
+          reject("please add your system settings with `!storeinfo <flag> | <info>` or manually add it to the report with `System Settings: info`");
         }
       });
     } else {
@@ -112,6 +112,8 @@ let submitCommand = {
           sectionNames.add(matches[1].toLowerCase());
         }
 
+        reportCapLinks = reportCapLinks.replace(/(\*)/gi, '\\$&');
+
         checkSectionsExist(userID, reportCapLinks, channelID, sectionNames, db).then((extraSystemSettings) => {
           let allSections = sections(reportCapLinks + extraSystemSettings, msg, bot);
 
@@ -129,9 +131,43 @@ let submitCommand = {
             return;
           }
 
-          let queueReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
+          let sysSettingsFlag = sysSettings.match(/(-l|-m|-w|-a|-i)/i);
 
-          queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header);
+          if(!!sysSettingsFlag) {
+            let whichOS;
+            let systemInfo = sysSettingsFlag[1];
+
+            if(sysSettingsFlag[1] === "-w") {
+              whichOS = "windows";
+            } else if(sysSettingsFlag[1] === "-i") {
+              whichOS = "ios";
+            } else if(sysSettingsFlag[1] === "-l") {
+              whichOS = "linux";
+            } else if(sysSettingsFlag[1] === "-m") {
+              whichOS = "macOS";
+            } else if(sysSettingsFlag[1] === "-a") {
+              whichOS = "android";
+            }
+
+            db.get("SELECT " + whichOS + " FROM users WHERE userid = ?", [userID], function(error, dbReplySI) {
+              if(!!error) {
+                console.log(error);
+              }
+              if(!dbReplySI || !dbReplySI[whichOS]) {
+                utils.botReply(bot, userID, channelID, "you do not have those system settings stored. Please add correct system settings.", command, msgID, true);
+                return;
+              }
+              sysSettings = dbReplySI[whichOS];
+
+              let queueReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
+
+              queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header);
+            });
+          } else {
+            let queueReportString = "\n**Short description:** " + header + "\n**Steps to reproduce:** " + stepsToRepro + "\n**Expected result:** " + expectedResult + "\n**Actual result:** " + actualResult + "\n**Client settings:** " + clientSetting + "\n**System settings:** " + sysSettings;
+
+            queueUtils.queueReport(bot, userTag, userID, channelID, db, msg, reportCapLinks, queueReportString, header);
+          }
         }).catch((errorMessage)=>{
           utils.botReply(bot, userID, channelID, errorMessage, command, msgID, true);
         });

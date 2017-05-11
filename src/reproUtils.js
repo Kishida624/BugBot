@@ -28,7 +28,7 @@ function addRepro(bot, userID, channelID, msgID, trello, db, reproCnt, reportKey
 
   let splitMsg = msgContent.split('**Reproducibility:**');
   let splitOne = splitMsg[1];
-  let pattern = "\\\n(\\<\\:greenTick\\:" + config.emotes.greenTick + "\\>|\\<\\:redTick\\:" + config.emotes.redTick + "\\>)\\s(\\*\\*" + userTag + "\\*\\*)\\s(.*)";
+  let pattern = "\\\n(\\<\\:greenTick\\:" + config.emotes.greenTick + "\\>|\\<\\:redTick\\:" + config.emotes.redTick + "\\>)\\s(\\*\\*" + userTag + "\\*\\*):?\\s(.*)";
   let newRegex = new RegExp(pattern, "i");
 
   let matchTick = splitOne.match(newRegex);
@@ -115,6 +115,8 @@ function preCheckReproSetup(bot, reportKey, reproCnt, reproduction, userTag, cha
           utils.botReply(bot, userID, channelID, "this bug has already been closed.", command, msgID, false);
           return;
         }
+
+        reproCnt = reproCnt.replace(/(\*|`|\~|\_)/gi, "\\$&");
 
         let whichClient = reproCnt.match(/(-l|-m|-w|-a|-i)/i);
         let system;

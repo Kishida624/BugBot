@@ -23,8 +23,8 @@ bot.on("ready", () => {
   db.run("CREATE TABLE IF NOT EXISTS reports (id INTEGER, header TEXT, reportString TEXT, userID TEXT, userTag TEXT, cardID TEXT, reportStatus TEXT, trelloURL TEXT, canRepro INTEGER, cantRepro INTEGER, reportMsgID TEXT, timestamp TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS reportQueueInfo (id INTEGER, userID TEXT, userTag TEXT, info TEXT, stance TEXT)");
   db.run("CREATE TABLE IF NOT EXISTS reportAttachments (id INTEGER, userID TEXT, userTag TEXT, attachment TEXT)");
-  db.run("CREATE TABLE IF NOT EXISTS users (userID TEXT, xp INTEGER, windows TEXT, ios TEXT, android TEXT, macOS TEXT, linux TEXT, reproDailyXP INTEGER, reproDailyTimer TEXT, ADdailyXP INTEGER, ADdailyTimer TEXT, hugDailyNumb INTEGER)");
-  bot.createMessage(config.channels.modLogChannel, "I heard there are bugs that needs reporting. I'm online and ready to rumble! " + process.pid);
+  db.run("CREATE TABLE IF NOT EXISTS users (userID TEXT, xp INTEGER, windows TEXT, ios TEXT, android TEXT, macOS TEXT, linux TEXT, reproDailyNumb INTEGER, ADdailyNumb INTEGER, hugDailyNumb INTEGER)");
+  bot.createMessage(config.channels.modLogChannel, "I heard there are bugs that needs reporting. I'm online and ready to rumble!");
 
   if(reconnect === false) {
     //run loops
@@ -35,18 +35,17 @@ bot.on("ready", () => {
   }
 });
 
-commandList.add('addNote'); //Done
-commandList.add('addRoles'); //Done
+commandList.add('addNote');
+commandList.add('addRoles');
 commandList.add('adminCommands');
-commandList.add('approveDeny'); //Done - missing trelloUtils
+commandList.add('approveDeny');
 commandList.add('attachment');
-commandList.add('edit'); //Done - missing trelloUtils
-commandList.add('modCommands'); //Done
+commandList.add('edit');
+commandList.add('modCommands');
 commandList.add('reproductions');
+commandList.add('revoke');
 commandList.add('storeInfo');
 commandList.add('submit');
-commandList.add('voteMute');
-commandList.add('xp');
 
 function userHasRole(user, role) {
   return user.roles.some(memberRole => memberRole === role);
@@ -86,6 +85,7 @@ bot.on('messageCreate', (msg) => {
   let command = messageSplit.shift();
   let channelID = msg.channel.id;
   let userTag = msg.author.username + "#" + msg.author.discriminator;
+      userTag = userTag.replace(/(\*|\`|\~|\_)/gi, "/$&");
   let userID = msg.author.id;
 
   if(!!msg.channel.guild) {
@@ -100,8 +100,6 @@ bot.on('messageCreate', (msg) => {
       if(userHasAuthorityForCommand(msg.member, matchingCommand)) {
         //check for channel
         if(correctChannelIsBeingUsed(msg.channel, matchingCommand)){
-
-          console.log(command + " " + messageSplit.join(' '));
           matchingCommand.execute(bot, channelID, userTag, userID, command, msg, trello, db);
         } else {
           //Tell the user they're posting the command in the wrong channel?
@@ -109,7 +107,7 @@ bot.on('messageCreate', (msg) => {
       }else {
         // Add channel check
         //Tell the user they don't have permission for that command
-        //utils.botReply(bot, userID, channelID, "only people with the role of Bug Hunter or higher can use that command, in order to prevent spam and abuse. Just ask any Bug Hunter™ and they'll be more than happy to help you out.", command, msg.id, true);
+        utils.botReply(bot, userID, channelID, "you do not have access to that command", command, msg.id, true);
       }
     }else {
       let isRightChannel = channelID === config.channels.queueChannel || channelID === config.channels.iosChannel || channelID === config.channels.linuxChannel || channelID === config.channels.androidChannel || channelID === config.channels.canaryChannel;
@@ -134,8 +132,6 @@ bot.on('messageCreate', (msg) => {
     }
   }
 });
-
-
 
 // Tell the user that they can only post commands in the reporting channel
 function delMsgInReportingChannel(channelID, userID) {

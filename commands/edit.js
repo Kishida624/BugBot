@@ -3,8 +3,6 @@ const config = require('../config');
 let trelloUtils = require('../src/trelloUtils');
 let utils = require('../src/utils');
 let qUtils = require('../src/queueUtils');
-//Always check for report key in Trello msg
-//Log every edit to modLogChannel
 
 let edit = {
   pattern: /!edit/i,
@@ -33,18 +31,21 @@ let edit = {
     }
 
     let cleanNewContent;
-    if(!!newContent.match(/(\*|\`)/i)){
-      console.log("test");
-      cleanNewContent = newContent.replace(/(\*|\`)/gi, "/$&");
+    if(!!newContent.match(/(\*|\`|\~)/i)){
+      cleanNewContent = newContent.replace(/(\*|\`|\~|\_)/gi, "/$&");
     } else {
-      console.log("potato");
       cleanNewContent = newContent;
-      console.log(cleanNewContent);
+    }
+
+    if(!cleanNewContent) {
+      utils.botReply(bot, userID, channelID, "you forgot to add your new content!", command, msg.id);
+      return;
     }
 
     switch (editSection) {
       case "header":
       case "title":
+      case "short description":
         editSection = "short description";
       break;
       case "body":
@@ -70,8 +71,6 @@ let edit = {
     }
 
     db.get("SELECT reportString, reportMsgID, reportStatus, trelloURL FROM reports WHERE trelloURL = ? OR id = ?", [key, key], function(error, report) {
-      console.log(newContent);
-      console.log(editSection);
       if(!!report && report.reportStatus === "trello") {
         key = report.trelloURL;
       }
@@ -96,7 +95,7 @@ let edit = {
                 let editReport = oldReport.content.replace(newRegex, utils.toTitleCase(editSection) + ":** " + cleanNewContent);
                 bot.editMessage(config.channels.queueChannel, report.reportMsgID, editReport).then(() => {
                   utils.botReply(bot, userID, channelID, " `" + utils.toTitleCase(editSection) + "` has been updated", command, msg.id, false);
-                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited`" + utils.toTitleCase(editSection) + "` ID: **#" + key + "**");
+                  bot.createMessage(config.channels.modLogChannel, "✏ **" + userTag + "** edited **#" + key + "** `" + utils.toTitleCase(editSection) + "`");
                 }).catch((error) => {
                   console.log("Edit | msgQueue\n" + error);
                 });

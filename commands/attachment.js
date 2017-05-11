@@ -5,8 +5,6 @@ const utils = require("../src/utils");
 const customConfig = require('../configEdit');
 const attachUtils = require('../src/attachUtils');
 
-//Only one image link attachment per command
-//Android can embed several images at once
 let attach = {
   pattern: /!attach/i,
   execute: function(bot, channelID, userTag, userID, command, msg, trello, db) {

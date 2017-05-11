@@ -47,6 +47,7 @@ let approveDeny = {
         utils.botReply(bot, userID, channelID, "this report has already been moved", command, msg.id, false);
         return;
       }
+      contentMessage[2] = contentMessage[2].replace(/(\*|`|\~|\_)/gi, "\\$&");
       let whichClient = contentMessage[2].match(/(-l|-m|-w|-a|-i)/i);
       let ADcontent;
       //Check if ADcontent exists or not, reply "missing reason/user settings" if it's missing

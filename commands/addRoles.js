@@ -1,13 +1,10 @@
 "use strict";
-
-//done
-
 const config = require("../config");
 const customConfig = require('../configEdit');
-let utils = require("../src/utils");
+const utils = require("../src/utils");
 
 let addRoles = {
-  pattern: /!ios|!android|!linux|!bh/i,
+  pattern: /!ios|!android|!linux/i,
   execute: function(bot, channelID, userTag, userID, command, msg) {
     let roles = msg.member.roles;
     switch (command.toLowerCase()) {
@@ -101,37 +98,6 @@ let addRoles = {
               console.log("--> AddRoles | Linux Tester removeRole\n" + err);
             });
             bot.createMessage(config.channels.modLogChannel, "Removed `Linux Tester` from **" + userTag + "**");
-          });
-        }
-      break;
-      case "!bh":
-        var hunter = config.roles.hunterRole;
-        var index = roles.indexOf(hunter);
-        if(index === -1){
-          roles.push(hunter);
-          bot.editGuildMember(msg.channel.guild.id, userID, {
-            roles: roles
-          }).then(() => {
-            bot.createMessage(channelID, "<@" + userID + ">, you have been given the role of `Bug Hunter`. Use the same command again to remove this role from yourself.").then(utils.delay(customConfig.delayInS)).then((msgInfo) => {
-              bot.deleteMessage(channelID, msgInfo.id);
-              bot.deleteMessage(channelID, msg.id);
-            }).catch((err) => {
-              console.log("--> AddRoles | BH addRole\n" + err);
-            });
-            bot.createMessage(config.channels.modLogChannel, "Gave `Bug Hunter` to **" + userTag + "**");
-          });
-        }else{
-          roles.splice(index, 1);
-          bot.editGuildMember(msg.channel.guild.id, userID, {
-            roles: roles
-          }).then(() => {
-            bot.createMessage(channelID, "<@" + userID + ">, you have been removed from the `Bug Hunter` role. Use the same command again to add this role to yourself.").then(utils.delay(customConfig.delayInS)).then((msgInfo) => {
-              bot.deleteMessage(channelID, msgInfo.id);
-              bot.deleteMessage(channelID, msg.id);
-            }).catch((err) => {
-              console.log("--> AddRoles | BH removeRole\n" + err);
-            });
-            bot.createMessage(config.channels.modLogChannel, "Removed `Bug Hunter` from **" + userTag + "**");
           });
         }
       break;

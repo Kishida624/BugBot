@@ -24,7 +24,7 @@ function addReproToTrello(bot, userID, userTag, db, trello, reportKey, channelID
           utils.botReply(bot, userID, channelID, "your reproduction has been added to the ticket.", command, msgID, false);
         }
       }
-      bot.createMessage(config.channels.modLogChannel, emoji + " **" + userTag + "**: " + reproduction + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
+      bot.createMessage(config.channels.modLogChannel, emoji + " **" + userTag + "** " + reproduction + " `" + info.data.card.name + "` <http://trello.com/c/" + info.data.card.shortLink + ">");
     }
   }
 

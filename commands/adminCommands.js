@@ -1,10 +1,12 @@
 "use strict";
 const config = require("../config");
-let utils = require("../src/utils");
-let adminUtils = require('../src/adminUtils');
+const utils = require("../src/utils");
+const adminUtils = require('../src/adminUtils');
+const fs = require('fs');
+const dateFormat = require('dateformat');
 
 let adminCommands = {
-  pattern: /!dapprove|!ddeny|!severity|!fight/i,
+  pattern: /!dapprove|!ddeny|!backup/i,
   execute: function(bot, channelID, userTag, userID, command, msg, trello, db) {
     let messageSplit = msg.content.split(' ');
     messageSplit.shift();
@@ -53,18 +55,20 @@ let adminCommands = {
         }
 
         break;
-      case "!severity":
+      case "!backup":
 
-        break;
-      case "!fight":
+        let now = new Date();
+        let thisCycle = dateFormat(now, "UTC:mm-dd-yyyy-HH-MM");
+        let bufferString = fs.readFileSync('./data/data.sqlite');
+
+        bot.createMessage(config.channels.modLogChannel, null, {file: bufferString, name: "Backup-" + thisCycle + ".sqlite"});
 
         break;
     }
   },
   roles: [
     config.roles.adminRole,
-    config.roles.devRole,
-    config.roles.trelloModRole // for testing purposes only
+    config.roles.devRole
     ],
   channels: [
     config.channels.allChannels

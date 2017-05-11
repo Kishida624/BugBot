@@ -19,7 +19,7 @@ let adminUtils = {
           db.run("UPDATE reports SET reportStatus = 'trello', canRepro = ? WHERE id = ?", [canRepro, key]);
           db.run("INSERT INTO reportQueueInfo (id, userID, userTag, info, stance) VALUES (?, ?, ?, ?, ?)", [key, userID, userTag, ADcontent, 'approve']);
           utils.botReply(bot, userID, channelID, "you've successfully overlord-approved the report!", command, msg.id, false);
-          bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** approves: **#" + key + "** `" + reportData.header + "` | `" + ADcontent + "`"); //log to bot-log
+          bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** approves **#" + key + "** `" + reportData.header + "` | `" + ADcontent + "`"); //log to bot-log
           tutils.addReportTrello(bot, key, db, trello);
         } else if(command.toLowerCase() === "!ddeny") {
           let cantRepro = reportData.cantRepro + 1;
@@ -27,7 +27,7 @@ let adminUtils = {
           db.run("INSERT INTO reportQueueInfo (id, userID, userTag, info, stance) VALUES (?, ?, ?, ?, ?)", [key, userID, userTag, ADcontent, 'deny']);
           utils.botReply(bot, userID, channelID, "you've successfully overlord-denied the report!", command, msg.id, false);
   	      qutils.deniedReport(bot, msg, db, key, reportData);
-          bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** denied: **#" + key + "** `" + reportData.header + "` | `" + ADcontent + "`"); //log to bot-log
+          bot.createMessage(config.channels.modLogChannel, "👍 **" + userTag + "** denied **#" + key + "** `" + reportData.header + "` | `" + ADcontent + "`"); //log to bot-log
         }
       });
     });
