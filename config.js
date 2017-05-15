@@ -1,40 +1,39 @@
 var config = {
-  botID: '283010618376847360', //240545475118235648
-  DTserverID: '285838309878530048', //197038439483310086
+  botID: '240545475118235648',                //bot's user ID
+  DTserverID: '197038439483310086',           //iscord Testers server ID
 
   channels: {
-    iosChannel: '285840931197026308', //202491590390841344
-    androidChannel: '285841024675217408', //232568032394870784
-    canaryChannel: '285841087816531968', //197038744908333066
-    linuxChannel: '285841181634461696', //238073742624948225
-    modLogChannel: "285839368957198336", // 241625778368806912
-    bugHunterChannel: '285845575495057409', // 217764019661045761
-    queueChannel: '285841362186665984', //253923313460445184
-    logErrorsChannel: '',
-    allChannels: 'allChannels' // fake channel for everyone
+    iosChannel: '202491590390841344',         //ios text Channel
+    androidChannel: '232568032394870784',     //android text Channel
+    canaryChannel: '197038744908333066',      //canary text Channel
+    linuxChannel: '238073742624948225',       //linux text Channel
+    modLogChannel: "241625778368806912",      //mod log text Channel
+    bugHunterChannel: '217764019661045761',   //bug hunter text Channel
+    queueChannel: '253923313460445184',       //bug approval text channel
+    allChannels: 'allChannels'                //fake channel for everyone
   },
 
   roles: {
-    devRole: '285839411801882624', // 197042389569765376
-    hunterRole: '285839440793042945', // 197042209038663680
-    adminRole: '197042322939052032',
-    androidAlphaRole: '285839558153732096', // 234838349800538112
-    iosTestflightRole: '285839575698505728', // 234838392464998402
-    linuxTesterRole: '285839519222202368',
-    trelloModRole: '285839459201581056', // 197400761104203776
-    everybodyRole: 'everybody' // fake role for everyone
+    devRole: '197042389569765376',            //dev role
+    hunterRole: '197042209038663680',         //bug hunter role
+    adminRole: '197042322939052032',          //admin role
+    androidAlphaRole: '234838349800538112',   //android alpha role
+    iosTestflightRole: '234838392464998402',  //ios testflight role
+    linuxTesterRole: '278229255169638410',    //linux role
+    trelloModRole: '197400761104203776',      //trello mod role
+    everybodyRole: 'everybody'                //fake role for everyone
   },
 
   cards: {
-    iosCard: '57f40c37cb7d8fe0daa053ab', //57fd4af58042f56c271d46b3
-    androidCard: '57f3ba51f80fce646d44085f', // 57f2a30d861fa9b5816c9717
-    canaryCard: '57f7ac925b7707a242d3e815', //5771677fda45a436c5b8d255
-    linuxCard: '57f7ac925b7707a242d3e815' //5846f9f1c7b3c505ea4a56be
+    iosCard: '57fd4af58042f56c271d46b3',      //ios user report card
+    androidCard: '57f2a30d861fa9b5816c9717',  //android user report card
+    canaryCard: '5771677fda45a436c5b8d255',   //canary user report card
+    linuxCard: '5846f9f1c7b3c505ea4a56be'     //linux user report card
   },
 
   emotes: {
-    greenTick: '301528515361243136',
-    redTick: '301528514832760833'
+    greenTick: '312314752711786497',          //green tick emote ID
+    redTick: '312314733816709120'             //red tick emote ID
   }
 }
 module.exports = config;
