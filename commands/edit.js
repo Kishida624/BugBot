@@ -13,67 +13,79 @@ let edit = {
     let joinedMessage = messageSplit.join(' ');
 
     let matchString = joinedMessage.match(/(?:(?:<)?(?:https?:\/\/)?(?:www\.)?trello.com\/c\/)?([^\/|\s|\>]+)(?:\/|\>)?(?:[\w-\d]*)?(?:\/|\>|\/>)?\s*\|\s*([\s\S]*)\s\|\s*([\s\S]*)/i);
+
     if(!matchString) {
       utils.botReply(bot, userID, channelID, "please provide a URL, section you want to edit and your new content", command, msg.id);
       return;
     }
+
     let key = matchString[1];
     let editSection = matchString[2];
     let newContent = matchString[3];
-    var matchFormat = editSection.match(/\b(header|title|short description|body|str|steps to reproduce|expected|expected result|actual|actual result|cs|client|client setting|ss|system|system setting)(s)?(:)?/i);
-    if(!splitters || splitters.length !== 2){
-      utils.botReply(bot, userID, channelID, "please include two splitters, like this: `!edit <key/url> | <what part you want to change> | <the new content>`", command, msg.id, false);
-      return;
-    }
-    if(!matchFormat){
-      utils.botReply(bot, userID, channelID, "please include the section you want to change. Look in #Bot-Help for a full list of sections.", command, msg.id);
-      return;
-    }
+    //only reporter and mods+ can edit
+    db.get("SELECT userID, reportString, reportMsgID, reportStatus, trelloURL FROM reports WHERE trelloURL = ? OR id = ?", [key, key], function(error, report) {
 
-    let cleanNewContent;
-    if(!!newContent.match(/(\*|\`|\~)/i)){
-      cleanNewContent = newContent.replace(/(\*|\`|\~|\_)/gi, "/$&");
-    } else {
-      cleanNewContent = newContent;
-    }
+      let getPerms = msg.member.roles.indexOf(config.roles.devRole) && msg.member.roles.indexOf(config.roles.adminRole) && msg.member.roles.indexOf(config.roles.trelloModRole);
 
-    if(!cleanNewContent) {
-      utils.botReply(bot, userID, channelID, "you forgot to add your new content!", command, msg.id);
-      return;
-    }
+      if(getPerms === -1 && report.userID !== userID) {
+        utils.botReply(bot, userID, channelID, "only the reporter, or mods+ can modify reports", command, msg.id, false);
+        return;
+      }
 
-    switch (editSection) {
-      case "header":
-      case "title":
-      case "short description":
-        editSection = "short description";
-      break;
-      case "body":
-      case "str":
-      case "steps to reproduce":
-        cleanNewContent = cleanNewContent.replace(/(-)\s/gi, '\n$&');
-        editSection = "steps to reproduce";
-      break;
-      case "expected":
-        editSection = "expected result";
-      break;
-      case "actual":
-        editSection = "actual result";
-      break;
-      case "cs":
-      case "client":
-        editSection = "client setting";
-      break;
-      case "ss":
-      case "system":
-        editSection = "system setting";
-      break;
-    }
-
-    db.get("SELECT reportString, reportMsgID, reportStatus, trelloURL FROM reports WHERE trelloURL = ? OR id = ?", [key, key], function(error, report) {
       if(!!report && report.reportStatus === "trello") {
         key = report.trelloURL;
       }
+
+      var matchFormat = editSection.match(/\b(header|title|short description|body|str|steps to reproduce|expected|expected result|actual|actual result|cs|client|client setting|ss|system|system setting)(s)?(:)?/i);
+      if(!splitters || splitters.length !== 2){
+        utils.botReply(bot, userID, channelID, "please include two splitters, like this: `!edit <key/url> | <what part you want to change> | <the new content>`", command, msg.id, false);
+        return;
+      }
+      if(!matchFormat){
+        utils.botReply(bot, userID, channelID, "please include the section you want to change. Look in #Bot-Help for a full list of sections.", command, msg.id);
+        return;
+      }
+
+      let cleanNewContent;
+      if(!!newContent.match(/(\*|\`|\~)/i)){
+        cleanNewContent = newContent.replace(/(\*|\`|\~|\_)/gi, "/$&");
+      } else {
+        cleanNewContent = newContent;
+      }
+
+      if(!cleanNewContent) {
+        utils.botReply(bot, userID, channelID, "you forgot to add your new content!", command, msg.id);
+        return;
+      }
+
+      switch (editSection) {
+        case "header":
+        case "title":
+        case "short description":
+          editSection = "short description";
+        break;
+        case "body":
+        case "str":
+        case "steps to reproduce":
+          cleanNewContent = cleanNewContent.replace(/(-)\s/gi, '\n$&');
+          editSection = "steps to reproduce";
+        break;
+        case "expected":
+          editSection = "expected result";
+        break;
+        case "actual":
+          editSection = "actual result";
+        break;
+        case "cs":
+        case "client":
+          editSection = "client setting";
+        break;
+        case "ss":
+        case "system":
+          editSection = "system setting";
+        break;
+      }
+
       trello.get("/1/cards/" + key, {}, function(errorTrello, urlData) {
         if(!report && !urlData && !urlData.id) { //Check if the key is correct
           utils.botReply(bot, userID, channelID, "I can't seem to find the report on Trello or in the Queue, you should double check your key.", command, msg.id, false);
@@ -134,10 +146,7 @@ let edit = {
     });
   },
   roles: [
-    config.roles.adminRole,
-    config.roles.trelloModRole,
-    config.roles.devRole,
-    config.roles.hunterRole
+    config.roles.everybodyRole
     ],
   channels: [
     config.channels.iosChannel,

@@ -126,8 +126,9 @@ bot.on('messageCreate', (msg) => {
   } else {
     let getGuild = bot.guilds.get(config.DTserverID);
     let getUser = getGuild.members.get((msg.author.id));
-    let getPerms = getUser.roles.indexOf(config.roles.devRole) || getUser.roles.indexOf(config.roles.adminRole) || getUser.roles.indexOf(config.roles.trelloModRole);
-    if(!!getPerms && command.toLowerCase() === "!bug") {
+    let getPerms = getUser.roles.indexOf(config.roles.devRole) && getUser.roles.indexOf(config.roles.adminRole) && getUser.roles.indexOf(config.roles.trelloModRole);
+
+    if(getPerms !== -1 && command.toLowerCase() === "!bug") {
       getBug(bot, channelID, userTag, userID, command, msg, trello, db);
     }
   }

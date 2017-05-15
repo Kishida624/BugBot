@@ -8,7 +8,7 @@ function backup(bot) {
   setTimeout(function() {
     let now = new Date();
     let thisCycle = dateFormat(now, "UTC:mm-dd-yyyy-HH-MM");
-    let bufferString = fs.readFileSyncer('./data/data.sqlite');
+    let bufferString = fs.readFileSync('./data/data.sqlite');
 
     bot.createMessage(config.channels.modLogChannel, {file: bufferString, name: "Backup-" + thisCycle + ".sqlite"});
   }, configEdit.backupTimer * 1000 * 60 * 60);
